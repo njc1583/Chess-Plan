@@ -26,12 +26,12 @@ if __name__ == '__main__':
     if not res:
         print("Unable to read file",fn)
         exit(0)
-    # for i in range(world.numRigidObjects()):
-    #     obj = world.rigidObject(i)
-    #     #this will perform a reasonable center of mass / inertia estimate
-    #     m = obj.getMass()
-    #     m.estimate(obj.geometry(),mass=0.454,surfaceFraction=0.2)
-    #     obj.setMass(m)
+    for i in range(world.numRigidObjects()):
+        obj = world.rigidObject(i)
+        #this will perform a reasonable center of mass / inertia estimate
+        m = obj.getMass()
+        m.estimate(obj.geometry(),mass=0.454,surfaceFraction=0.2)
+        obj.setMass(m)
 
     #load the gripper info and grasp database
     source_gripper = robotiq_85
