@@ -56,10 +56,10 @@ if __name__ == '__main__':
     robot.setJointLimits(qmin,qmax)
 
     chessEngine = ChessEngine(world, world.terrain('tabletop'))
-
     chessEngine.loadPieces()
     chessEngine.loadBoard()
     chessEngine.arrangeBoard()
+    chessEngine.arrangePieces()
 
     # chessB = world.loadRigidObject('../data/4d-Staunton_Full_Size_Chess_Set/Square.stl')
     # chessB.geometry().scale(0.001)
