@@ -59,6 +59,7 @@ if __name__ == '__main__':
 
     chessEngine.loadPieces()
     chessEngine.loadBoard()
+    chessEngine.arrangeBoard()
 
     # chessB = world.loadRigidObject('../data/4d-Staunton_Full_Size_Chess_Set/Square.stl')
     # chessB.geometry().scale(0.001)
