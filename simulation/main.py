@@ -7,10 +7,16 @@ import math
 import random
 import time
 import sys
+
+from klampt.robotsim import RigidObjectModel
 sys.path.append("../common")
+sys.path.append("../engines")
+
 import grasp
 import grasp_database
 from known_grippers import *
+
+from ChessEngine import ChessEngine
 
 #PROBLEM = '3a'
 #PROBLEM = '3b'
@@ -48,6 +54,17 @@ if __name__ == '__main__':
             qmin[i] = -float('inf')
             qmax[i] = float('inf')
     robot.setJointLimits(qmin,qmax)
+
+    chessEngine = ChessEngine(world, world.terrain('tabletop'))
+    chessEngine.loadPieces()
+    chessEngine.loadBoard()
+    chessEngine.arrangeBoard()
+    chessEngine.arrangePieces()
+
+    # chessB = world.loadRigidObject('../data/4d-Staunton_Full_Size_Chess_Set/Square.stl')
+    # chessB.geometry().scale(0.001)
+    # chessB.setTransform(so3.identity(), [0.375, -0.275, 0.75])
+    # world.add('A2', chessB)
 
     #you can play around with which object you select for problem 3b...
     # obj = world.rigidObject(0)
