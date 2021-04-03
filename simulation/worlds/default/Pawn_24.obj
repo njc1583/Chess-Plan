@@ -1,0 +1,9 @@
+mesh Pawn_24/Pawn.off
+T 1 0 0 0 1 0 0 0 1 0.7 0.15 0.6425
+mass 1
+com -0.008 -0.00200002 0.413769
+inertia 0.119551 1.15104e-12 -5.4699e-12 1.15104e-12 0.119551 4.017e-09 -5.4699e-12 4.017e-09 0.0281997
+kFriction 0.5
+kRestitution 0.5
+kStiffness inf
+kDamping inf

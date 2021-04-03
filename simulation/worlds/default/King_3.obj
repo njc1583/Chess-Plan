@@ -1,0 +1,9 @@
+mesh King_3/King.off
+T 1 0 0 0 1 0 0 0 1 0 0 0
+mass 1
+com -0.00999999 1.36552e-06 0.765505
+inertia 0.314781 1.0609e-12 3.4654e-10 1.0609e-12 0.315154 -1.17197e-06 3.4654e-10 -1.17197e-06 0.04329
+kFriction 0.5
+kRestitution 0.5
+kStiffness inf
+kDamping inf

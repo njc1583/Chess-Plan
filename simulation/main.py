@@ -11,6 +11,7 @@ import sys
 from klampt.robotsim import RigidObjectModel
 sys.path.append("../common")
 sys.path.append("../engines")
+from world_generator import save_world
 
 import grasp
 import grasp_database
@@ -26,7 +27,8 @@ PHYSICS_SIMULATION = False  #not implemented correctly yet
 
 if __name__ == '__main__':
     #load the robot / world file
-    fn = "./main.xml"
+    # fn = "./main.xml"
+    fn = "./worlds/default.xml"
     world = WorldModel()
     res = world.readFile(fn)
     if not res:
@@ -55,12 +57,12 @@ if __name__ == '__main__':
             qmax[i] = float('inf')
     robot.setJointLimits(qmin,qmax)
 
-    chessEngine = ChessEngine(world, world.terrain('tabletop'))
-    chessEngine.loadPieces()
-    chessEngine.loadBoard()
-    chessEngine.arrangeBoard()
-    chessEngine.arrangePieces()
-
+    # chessEngine = ChessEngine(world, world.terrain('tabletop'))
+    # chessEngine.loadPieces()
+    # chessEngine.loadBoard()
+    # chessEngine.arrangeBoard()
+    # chessEngine.arrangePieces()
+    # save_world(world,"worlds/default.xml")
     # chessB = world.loadRigidObject('../data/4d-Staunton_Full_Size_Chess_Set/Square.stl')
     # chessB.geometry().scale(0.001)
     # chessB.setTransform(so3.identity(), [0.375, -0.275, 0.75])
