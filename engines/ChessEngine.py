@@ -1,5 +1,6 @@
 from klampt.math import vectorops,so3,se3
 import sys
+import math
 
 from klampt.robotsim import Mass
 sys.path.append("../common")
@@ -25,35 +26,50 @@ class ChessEngine:
         self.WHITE = (253/255, 217/255, 168/255, 1)
         self.BLACK = (45/255, 28/255, 12/255, 1)
 
-    def arrangeBoard(self):
+        self.board_rotation = 0
+
+    def arrangeBoard(self, rotation=0):
+        """ Arranges chessboard on the tabletop
+
+        :param: rotation, in degrees, the clockwise rotation of the 
+        chessboard
+        """
+        rotation = math.radians(rotation)
+
         table_bmin,table_bmax = self.tabletop.geometry().getBBTight()
-        tile_bmin,tile_bmax = self.boardTiles['A1']['tile'].geometry().getBBTight()
         
         top_table_h = table_bmax[2]
-        tile_height = tile_bmax[2] - tile_bmin[2]
-
-        tile_x = tile_bmax[0] - tile_bmin[0]
-        tile_y = tile_bmax[1] - tile_bmin[1]
 
         table_c_x = (table_bmax[0] + table_bmin[0]) / 2
         table_c_y = (table_bmax[1] + table_bmin[1]) / 2
-
-        start_x = table_c_x - 4 * tile_x 
-        start_y = table_c_y - 4 * tile_y
 
         for i in range(len(BOARD_X)):
             for j in range(len(BOARD_Y)):
                 tilename = BOARD_X[i] + BOARD_Y[j]
 
+                sx = (i - 4) * TILE_SCALE[0]
+                sy = (j - 4) * TILE_SCALE[1]
+
                 t = [
-                    start_x + i * tile_x,
-                    start_y + j * tile_y,
-                    top_table_h + tile_height / 2
+                    table_c_x + sx * math.cos(rotation) - sy * math.sin(rotation),
+                    table_c_y + sy * math.cos(rotation) + sx * math.sin(rotation),
+                    top_table_h + TILE_SCALE[2] / 2
                 ]
 
-                self.boardTiles[tilename]['tile'].setTransform(so3.identity(), t)
-                    
+                axis = [0,0,1]
+                
+                R = so3.from_axis_angle((axis, rotation))
+
+                self.boardTiles[tilename]['tile'].setTransform(R, t)
+        
+        self.board_rotation = rotation
+
     def arrangePieces(self, default=False):
+        """ Arranges pieces on a board. 
+
+        :param: default if True, the pieces are arranged on the board
+        as a default chess board setup 
+        """
         for i in range(len(BOARD_X)):
             for j in range(len(BOARD_Y)):
                 tilename = BOARD_X[i] + BOARD_Y[j]
@@ -68,15 +84,20 @@ class ChessEngine:
                 if piece is not None:
                     tile_R, tile_T = tile.getTransform()
 
-                    t = [
-                        tile_T[0] + TILE_SCALE[0] / 2,
-                        tile_T[1] + TILE_SCALE[1] / 2,
+                    tile_bmin,tile_bmax = tile.geometry().getBBTight()
+
+                    t = [ 
+                        (tile_bmin[0] + tile_bmax[0]) / 2,
+                        (tile_bmin[1] + tile_bmax[1]) / 2,
                         tile_T[2] + TILE_SCALE[2]
                     ]
 
                     piece.setTransform(so3.identity(), t)
 
     def loadObjects(self, name, color, colorn, amount, scale, piece, fname=None):
+        """ Loads an object from a file and sets scale and color of the
+        object; gives it a name; and sets the mass of an object
+        """
         if fname is None:
             fname = f'{OBJECT_DIRECTORY}/{name}.stl'
 
@@ -91,9 +112,9 @@ class ChessEngine:
                 sx,sy,sz = scale
                 o.geometry().scale(sx,sy,sz)
 
-            # m = Mass()
-            # m.estimate(o.geometry(), 0.25)
-            # o.setMass(m)
+            m = Mass()
+            m.estimate(o.geometry(), 0.25)
+            o.setMass(m)
 
             r, g, b, a = color 
 
@@ -106,7 +127,9 @@ class ChessEngine:
         return objs
 
     def loadBoard(self):
-        # Load default values
+        """ Loads default configuration for pieces; loads tiles from
+        object files; populates self.boardTiles
+        """
         default_file = open('../engines/default_board.conf')
 
         default_pieces = {}
@@ -147,6 +170,7 @@ class ChessEngine:
                     self.boardTiles[tilename]['default'] = default_pieces[tilename]
 
     def loadPieces(self):
+        """ Loads pieces from object files, and populates self.pieces """
         pieces = [] 
         
         pieces.extend(self.loadObjects('Rook', self.WHITE, 'w', 2, PIECE_SCALE, True))
