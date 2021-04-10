@@ -1,7 +1,7 @@
 from klampt import WorldModel,Simulator
 from klampt.io import resource
 from klampt import vis 
-from klampt.model.trajectory import Trajectory,RobotTrajectory,path_to_trajectory
+from klampt.model.trajectory import Trajectory,RobotTrajectory, execute_path,path_to_trajectory
 from klampt.math import vectorops,so3,se3
 import math
 import random
@@ -32,6 +32,16 @@ if __name__ == '__main__':
     world = WorldModel()
     res = world.readFile(fn)
     if not res:
+        fn = "./main.xml"
+        world = WorldModel()
+        res = world.readFile(fn)
+        chessEngine = ChessEngine(world, world.terrain('tabletop'))
+        chessEngine.loadPieces()
+        chessEngine.loadBoard()
+        chessEngine.arrangeBoard()
+        chessEngine.arrangePieces()
+        print(chessEngine.pieces)
+    if not res:
         print("Unable to read file",fn)
         exit(0)
     for i in range(world.numRigidObjects()):
@@ -57,11 +67,10 @@ if __name__ == '__main__':
             qmax[i] = float('inf')
     robot.setJointLimits(qmin,qmax)
 
-    # chessEngine = ChessEngine(world, world.terrain('tabletop'))
-    # chessEngine.loadPieces()
-    # chessEngine.loadBoard()
-    # chessEngine.arrangeBoard()
-    # chessEngine.arrangePieces()
+
+
+    for i in range(world.numRigidObjects()):
+        print(world.rigidObject(i).getName())
     # save_world(world,"worlds/default.xml")
     # chessB = world.loadRigidObject('../data/4d-Staunton_Full_Size_Chess_Set/Square.stl')
     # chessB.geometry().scale(0.001)

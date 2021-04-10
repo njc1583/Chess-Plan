@@ -64,8 +64,9 @@ class ChessEngine:
                     tile = self.boardTiles[tilename]['tile']
                 
                 piece = self.boardTiles[tilename]['piece']
-
                 if piece is not None:
+                    print(piece.getName())
+
                     tile_R, tile_T = tile.getTransform()
 
                     t = [
