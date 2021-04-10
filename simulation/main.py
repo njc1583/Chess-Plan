@@ -58,8 +58,31 @@ if __name__ == '__main__':
     chessEngine = ChessEngine(world, world.terrain('tabletop'))
     chessEngine.loadPieces()
     chessEngine.loadBoard()
-    chessEngine.arrangeBoard()
+
+    chessEngine.arrangeBoard(0)
     chessEngine.arrangePieces()
+
+    vis.add("world",world)
+    vis.spin(100)
+
+    chessEngine.arrangeBoard(-90)
+    chessEngine.arrangePieces(randomlyRotatePieces=True)
+
+    vis.add("world",world)
+    vis.spin(100)
+
+    # chessEngine.arrangeBoard(45)
+    # chessEngine.arrangePieces()
+
+    # vis.add("world",world)
+    # vis.spin(100)
+
+    # chessEngine.randomizePieces()
+    # chessEngine.arrangePieces()
+
+    # vis.add("world",world)
+    # vis.spin(100)
+
 
     # chessB = world.loadRigidObject('../data/4d-Staunton_Full_Size_Chess_Set/Square.stl')
     # chessB.geometry().scale(0.001)
@@ -102,8 +125,8 @@ if __name__ == '__main__':
     #     qstart = robot.getConfig()
 
     #add the world elements individually to the visualization
-    vis.add("world",world)
-    vis.spin(100)
+    # vis.add("world",world)
+    # vis.spin(100)
     # solved_trajectory = None
     # trajectory_is_transfer = None
     # next_item_to_pick = 0
