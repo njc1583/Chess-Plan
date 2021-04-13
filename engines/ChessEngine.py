@@ -1,9 +1,12 @@
+from PieceEnum import TileType
 from klampt.math import vectorops,so3,se3
 import sys
 import math
 import random
 
 from klampt.robotsim import Mass
+
+
 sys.path.append("../common")
 
 # OBJECT_DIRECTORY = '../data/4d-Staunton_Full_Size_Chess_Set'
@@ -183,6 +186,11 @@ class ChessEngine:
             objs.append((oname, o))
             self.world.add(oname, o)
 
+            # TODO: Remove in later dates
+            # Known bug that objects appear near the center of the world
+            # All mashed together; ask Hauser about this
+            o.setTransform(so3.identity(), [0,0,-1])
+
         return objs
 
     def loadBoard(self):
@@ -236,6 +244,36 @@ class ChessEngine:
             (table_bmin[1] + table_bmax[1]) / 2,
             table_bmax[2]
         ]
+
+    def getPieceEnumAtTile(self, tilename):
+        """
+        Returns the enum of a piece at a tile on the board
+        """
+        pname, piece = self.boardTiles[tilename][PIECE]
+
+        if piece is None:
+            return TileType.EMPTY
+
+        ptype = self._getPieceType(pname)
+
+        return TileType[ptype]
+
+    def getPieceArrangement(self):
+        """
+        Returns of values of PieceEnums in order that they appear in sensor image.
+
+        NOTE: This is engineered specifically work with the DataGenerator; editor beware.
+        
+        TODO: Improve the documentation; account for rotation
+        """
+        arrangement = []
+
+        for n in BOARD_Y[::-1]:
+            for l in BOARD_X:
+                tilename = l + n
+                arrangement.append(str(self.getPieceEnumAtTile(tilename).value))
+
+        return ';'.join(arrangement)
 
     def loadPieces(self):
         """ Loads pieces from object files, and populates self.pieces """

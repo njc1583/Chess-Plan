@@ -7,18 +7,25 @@ from klampt.model import sensing
 
 from PIL import Image
 
+from tqdm import tqdm
+
 import numpy as np
 import math
 import random
-import time
 import sys
 import os
+import argparse
+import shutil
+
+from engines.PieceEnum import TileType
 
 from klampt.robotsim import RigidObjectModel
 sys.path.append("../common")
 sys.path.append("../engines")
 
 from ChessEngine import ChessEngine
+
+DIST_FROM_BOARD = 0.5
 
 class DataGenerator:
     def __init__(self):
@@ -35,6 +42,8 @@ class DataGenerator:
         self._imageDir = 'image_dataset'
         self._colorDir = 'image_dataset/color'
         self._depthDir = 'image_dataset/depth'
+
+        self._metaDataFN = self._imageDir + '/metadata.csv'
 
         self._colorFNFormat = self._colorDir + '/%06d.png'
         self._depthFNFormat = self._depthDir + '/%06d.png' 
@@ -85,7 +94,23 @@ class DataGenerator:
             except Exception:
                 pass 
 
-    def _randomlyRotateCamera(self, min_r=0, max_r=70):
+    def deleteDataset(self):
+        try:
+            shutil.rmtree(self._imageDir)
+        except OSError as e:
+            print(f'Error deleting {self._imageDir}: {e}')
+
+    def _randomlyRotateCamera(self, min_r=0, max_r=70, dist=DIST_FROM_BOARD):
+        """
+        Randomly rotates camera about x-axis and zooms out from the center of the 
+        tabletop
+
+        :param: min_r: the minimum random rotation in degrees
+        :param: max_r: the maximum random rotation in degrees
+        :param: dist: the distance to zoom out from center of the table 
+
+        :return: the angle of rotation sampled
+        """
         min_r = math.radians(min_r)
         max_r = math.radians(max_r)
 
@@ -96,7 +121,7 @@ class DataGenerator:
 
         rot_deg = random.uniform(min_r, max_r)
         zoom_out_R = so3.from_axis_angle(([1,0,0], rot_deg))
-        zoom_out_t = vectorops.mul([0,math.sin(rot_deg),-math.cos(rot_deg)], 0.5)
+        zoom_out_t = vectorops.mul([0,math.sin(rot_deg),-math.cos(rot_deg)], dist)
 
         xform = se3.mul((table_R, table_t), (zoom_out_R, zoom_out_t))
 
@@ -104,29 +129,38 @@ class DataGenerator:
 
         return rot_deg
 
-    def _rotateCamera(self, r):
-        return self._randomlyRotateCamera(r, r)
+    def _rotateCamera(self, r, dist=DIST_FROM_BOARD):
+        """
+        Rotates a camera and zooms out from center of the tabletop
 
-    def generateImages(self, max_pics=100):
+        :param: r: rotation in degrees
+        :param: dist: distance to zoom out from center of the table
+
+        :return: angle of rotation
+        """
+        return self._randomlyRotateCamera(r, r, dist)
+
+    def generateImages(self, max_pics=100, save_depth=True):
         self._createDatasetDirectory()
 
         for i in range(self.world.numRigidObjects()):
             self.world.rigidObject(i).appearance().setSilhouette(0)
 
-        self._randomlyRotateCamera()
+        metadata_f = open(self._metaDataFN, mode='w+')
+        metadata_f.write('pieces\n')
 
-        def loop_through_sensors(world=self.world, sensor=self.sensor, max_pics=max_pics):
+        def loop_through_sensors(world=self.world, sensor=self.sensor, max_pics=max_pics, save_depth=save_depth):
 
             depth_scale = 8000
 
-            self._rotateCamera(45)
-
-            for counter in range(max_pics):
+            for counter in tqdm(range(max_pics)):
                 if counter > 0:
                     self.chessEngine.randomizePieces()
 
                 self.chessEngine.arrangePieces()
                 
+                self._randomlyRotateCamera(0, 20)
+
                 sensor.kinematicReset()
                 sensor.kinematicSimulate(world, 0.01)
 
@@ -134,14 +168,35 @@ class DataGenerator:
 
                 Image.fromarray(rgb).save(self._colorFNFormat%counter)
 
-                depth_quantized = (depth * depth_scale).astype(np.uint32)
+                pieces_arrangement = self.chessEngine.getPieceArrangement()
+                metadata_f.write(pieces_arrangement + '\n')
 
-                Image.fromarray(depth_quantized).save(self._depthFNFormat%counter)
+                if save_depth:
+                    depth_quantized = (depth * depth_scale).astype(np.uint32)
+                    Image.fromarray(depth_quantized).save(self._depthFNFormat%counter)
 
             vis.show(False)
 
         vis.loop(callback=loop_through_sensors)
+        
+        metadata_f.close()
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--num_images', '-n', help='number of generated images', default=100, type=int)
+    parser.add_argument('--save_depth', '-sd', action='store_true', help='save depth images')
+    parser.add_argument('--delete_dataset', '-dd', action='store_true', help='save depth images')
+
+    args = parser.parse_args()
+    return args
 
 if __name__ == "__main__":
+    args = parse_args()
+
     data_generator = DataGenerator()
-    data_generator.generateImages(10)
+
+    if args.delete_dataset:
+        data_generator.deleteDataset()
+
+    data_generator.generateImages(args.num_images, save_depth=args.save_depth)
