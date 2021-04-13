@@ -17,13 +17,12 @@ import os
 import argparse
 import shutil
 
-from engines.PieceEnum import TileType
-
 from klampt.robotsim import RigidObjectModel
 sys.path.append("../common")
 sys.path.append("../engines")
 
 from ChessEngine import ChessEngine
+from PieceEnum import TileType
 
 DIST_FROM_BOARD = 0.5
 
@@ -147,7 +146,7 @@ class DataGenerator:
             self.world.rigidObject(i).appearance().setSilhouette(0)
 
         metadata_f = open(self._metaDataFN, mode='w+')
-        metadata_f.write('pieces\n')
+        metadata_f.write('color,depth,pieces\n')
 
         def loop_through_sensors(world=self.world, sensor=self.sensor, max_pics=max_pics, save_depth=save_depth):
 
@@ -159,21 +158,21 @@ class DataGenerator:
 
                 self.chessEngine.arrangePieces()
                 
-                self._randomlyRotateCamera(0, 20)
+                self._randomlyRotateCamera(20, 40)
 
                 sensor.kinematicReset()
                 sensor.kinematicSimulate(world, 0.01)
 
                 rgb,depth = sensing.camera_to_images(self.sensor)
 
-                Image.fromarray(rgb).save(self._colorFNFormat%counter)
+                Image.fromarray(rgb).save(self._colorFNFormat % counter)
 
                 pieces_arrangement = self.chessEngine.getPieceArrangement()
-                metadata_f.write(pieces_arrangement + '\n')
+                metadata_f.write(f'{self._colorFNFormat % counter},{self._depthFNFormat % counter},{pieces_arrangement}\n')
 
                 if save_depth:
                     depth_quantized = (depth * depth_scale).astype(np.uint32)
-                    Image.fromarray(depth_quantized).save(self._depthFNFormat%counter)
+                    Image.fromarray(depth_quantized).save(self._depthFNFormat % counter)
 
             vis.show(False)
 
@@ -186,7 +185,7 @@ def parse_args():
 
     parser.add_argument('--num_images', '-n', help='number of generated images', default=100, type=int)
     parser.add_argument('--save_depth', '-sd', action='store_true', help='save depth images')
-    parser.add_argument('--delete_dataset', '-dd', action='store_true', help='save depth images')
+    parser.add_argument('--delete_dataset', '-dd', action='store_true', help='delete dataset before processing images')
 
     args = parser.parse_args()
     return args
