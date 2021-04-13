@@ -74,27 +74,24 @@ if __name__ == '__main__':
     chessEngine.arrangePieces()
 
     vis.add("world",world)
-    # vis.spin(100)
 
-    # chessEngine.arrangeBoard(-90)
-    # chessEngine.arrangePieces(randomlyRotatePieces=True)
-
-    vis.add("world",world)
-    # vis.spin(100)
     qstart = robot.getConfig()
     motion = ChessMotion(world, robot, chessEngine.boardTiles)
     # print(chessEngine.boardTiles)
     def planTriggered():
-        robot.setConfig(qstart)
+        # robot.setConfig(qstart)
         path = motion.plan_to_square("E4")
-        if path is not None:
-            ptraj = trajectory.RobotTrajectory(robot,milestones=path)
-            ptraj.times = [t / len(ptraj.times) * 5.0 for t in ptraj.times]
-            #this function should be used for creating a C1 path to send to a robot controller
-            traj = trajectory.path_to_trajectory(ptraj,timing='robot',smoothing=None)
-            #show the path in the visualizer, repeating for 60 seconds
-            vis.animate("start",traj)
-            vis.add("traj",traj,endeffectors=[9])
+        if path is None:
+            print("Unable to plan pick")
+        else:
+            (transit,approach,lift) = path
+            traj = transit
+            traj = traj.concat(approach,relative=True,jumpPolicy='jump')
+            traj = traj.concat(lift,relative=True,jumpPolicy='jump')
+            vis.add("traj",traj,endEffectors=[9])
+            vis.animate(vis.getItemName(robot),traj)
+        robot.setConfig(qstart)
+
 
     vis.addAction(planTriggered,"Plan to target",'p')
     # planTriggered()

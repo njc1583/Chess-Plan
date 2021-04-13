@@ -8,52 +8,41 @@ from klampt import RobotModel
 import math
 import time
 import sys
+from known_grippers import *
 sys.path.append('../common')
 sys.path.append("../motion")
-
-import gripper
-import known_grippers
 from klampt.math import vectorops,so3,se3
 from motionHelpers import *
 from planning import *
 class ChessMotion:
     def __init__(self, world, robot, board):
+        """
+        robot (RobotModel)
+        gripper (GripperInfo)
+        """
         self.world = world
         self.robot = robot
-        self.gripper = robot.link(9)
+        self.gripper = robotiq_85_kinova_gen3
         self.board = board      # boardTiles object from ChessEngine
         self.currentObject = None
 
     def plan_to_square(self, square):#world,robot,object,gripper,grasp):
         tile = self.board[square]['tile']
-        print(tile)
+        print("TILE:",tile.getTransform())
         return self.plan_pick_one(tile.getTransform())
 
     def solve_robot_ik(self,Tgripper):
         """Given a robot, a gripper, and a desired gripper transform,
         solve the IK problem to place the gripper at the desired transform.
-        
-        Note: do not modify DOFs 0-5.
-        
         Returns:
             list or None: Returns None if no solution was found, and
             returns an IK-solving configuration q otherwise.
-        
-        This function may modify robot.
-        
         Args:
-            robot (RobotModel)
-            gripper (GripperInfo)
             Tgripper (klampt se3 object)
         """
-        #TODO: solve the IK problem
-        link = self.gripper
+        link = self.robot.link(self.gripper.base_link)
         goal = ik.objective(link,R=Tgripper[0],t=Tgripper[1])
-        #robot.setConfig(startConfig)  #(optional, set the initial configuration)
         solver = ik.solver(goal)
-        # active_dofs = solver.getActiveDofs()
-        # new_dofs = [i for i in active_dofs if i > 5]
-        # solver.setActiveDofs(new_dofs)
         if solver.solve():
             print("Hooray, IK solved")
             print("Resulting config:",self.robot.getConfig())
@@ -88,14 +77,14 @@ class ChessMotion:
         #TODO solve the IK problem for qgrasp?
         #qgrasp = qstart
         # solution = ik.solve_global(grasp.ik_constraint, iters=100, numRestarts = 10)#, feasibilityCheck=is_collide)
-        solution = self.solve_robot_ik(Target)
-        if not solution:
-            self.robot.setConfig(qstart)
-            return None
-        print(f"Solution: {solution}")
+        # solution = self.solve_robot_ik(Target)
+        # if not solution:
+        #     self.robot.setConfig(qstart)
+        #     return None
+        # print(f"Solution: {solution}")
         qgrasp = self.robot.getConfig()
         # qgrasp = grasp.set_finger_config(qgrasp)  #open the fingers the right amount
-        qopen = gripper.set_finger_config(qgrasp,self.gripper.partway_open_config(1))   #open the fingers further
+        qopen = self.gripper.set_finger_config(qgrasp,self.gripper.partway_open_config(1))   #open the fingers further
         distance = 0.2
         qpregrasp = retract(self.robot, self.gripper, vectorops.mul(self.gripper.primary_axis,-1*distance), local=True)   #TODO solve the retraction problem for qpregrasp?
         qstartopen = self.gripper.set_finger_config(qstart,self.gripper.partway_open_config(1))  #open the fingers of the start to match qpregrasp
@@ -112,7 +101,7 @@ class ChessMotion:
         #     if not is_collide():
         #         return None
         self.robot.setConfig(qgrasp)
-        qlift = retract(self.robot, gripper, vectorops.mul([0,0,1],distance), local=False) # move up a distance
+        qlift = retract(self.robot, self.gripper, vectorops.mul([0,0,1],distance), local=False) # move up a distance
         self.robot.setConfig(qstart)
         return (RobotTrajectory(self.robot,milestones=[qstart]+transit),RobotTrajectory(self.robot,milestones=[qpregrasp,qopen,qgrasp]),RobotTrajectory(self.robot,milestones=[qgrasp,qlift]))
 

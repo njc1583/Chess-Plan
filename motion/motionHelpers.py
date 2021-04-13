@@ -1,10 +1,4 @@
-from klampt.plan import robotplanning
-from klampt.plan.cspace import MotionPlan
-from klampt.model import trajectory
-from klampt import vis 
-from klampt import RobotModel
-import math
-import time
+from klampt.model import ik
 import sys
 sys.path.append('../common')
 import gripper
