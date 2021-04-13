@@ -29,7 +29,9 @@ class ChessEngine:
         self.pieces = {} 
 
         self.WHITE = (253/255, 217/255, 168/255, 1)
-        self.BLACK = (45/255, 28/255, 12/255, 1)
+        # self.BLACK = (45/255, 28/255, 12/255, 1)
+        # self.BLACK = (110/255, 80/255, 16/255, 1)
+        self.BLACK = (79/255, 56/255, 6/255, 1)
 
         self.board_rotation = 0
 
@@ -226,6 +228,14 @@ class ChessEngine:
                     self.boardTiles[tilename][PIECE] = (default_pieces[tilename], self.pieces[default_pieces[tilename]])
                     self.boardTiles[tilename][DEFAULT] = (default_pieces[tilename], self.pieces[default_pieces[tilename]])
 
+    def getTableCenter(self):
+        table_bmin,table_bmax = self.tabletop.geometry().getBBTight()
+
+        return [
+            (table_bmin[0] + table_bmax[0]) / 2,
+            (table_bmin[1] + table_bmax[1]) / 2,
+            table_bmax[2]
+        ]
 
     def loadPieces(self):
         """ Loads pieces from object files, and populates self.pieces """

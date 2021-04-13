@@ -13,4 +13,4 @@ inertiadiag 0.1 0.1 0.1
 
 joint weld 0
 
-property sensors <sensors><CameraSensor name="rgbd_camera" link="-1" Tsensor="0.0 -0.859896 0.510469	-1.0 0.0 1.11022e-16	-1.11022e-16 -0.510469 -0.859896	0 0.0303227 1.52825"  xres="640" yres="480" xfov="1.05" yfov="0.6" zmin="0.15" zmax="1.5" zresolution="0.01" zvarianceLinear="0.00001" /> </sensors>
+property sensors <sensors><CameraSensor name="rgbd_camera" link="-1" Tsensor="0.0 -0.859896 0.510469	-1.0 0.0 1.11022e-16	-1.11022e-16 -0.510469 -0.859896	0 0.0303227 1.52825"  xres="480" yres="480" xfov="1.05" yfov="0.6" zmin="0.15" zmax="1.5" zresolution="0.01" zvarianceLinear="0.00001" /> </sensors>
