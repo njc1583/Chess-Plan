@@ -1,3 +1,7 @@
+from klampt.plan import robotplanning
+from klampt.plan.cspace import MotionPlan
+from klampt.model import trajectory
+import time
 def feasible_plan(world,robot,qtarget):
     """Plans for some number of iterations from the robot's current configuration to
     configuration qtarget.  Returns the first path found.
