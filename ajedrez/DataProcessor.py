@@ -5,6 +5,7 @@ from skimage import io, transform
 import numpy as np 
 from torch.utils.data import Dataset, DataLoader 
 from torchvision import transforms, utils
+from PIL import Image
 
 class AjedrezDataset(Dataset):
     def __init__(self, metadata_csv, root_dir, transform=None):
@@ -21,23 +22,41 @@ class AjedrezDataset(Dataset):
 
         filenames = self.metadata.iloc[index, 0:2]
 
-        color_img = torch.from_numpy(io.imread(filenames[0]).astype(np.float32))
-        depth_img = torch.from_numpy(io.imread(filenames[1]).astype(np.float32))
-
-        h, w = depth_img.shape
-
-        depth_img = depth_img.reshape(h, w, 1)
+        color_img = Image.fromarray(io.imread(filenames[0]), 'RGB')
+        depth_img = Image.fromarray(io.imread(filenames[1]), 'L')
 
         pieces = self.metadata.iloc[index,2]
 
-        concat_img = torch.cat((color_img,depth_img), 2)
-
         classes = torch.tensor([int(x) for x in pieces.split(';')])
 
-        return {'image': concat_img, 'classes': classes}
+        if self.transform is not None:
+            color_img = self.transform(color_img)
+            depth_img = self.transform(depth_img)
+
+        concat_img = torch.cat((color_img,depth_img), dim=0)
+
+        return (concat_img, classes) 
 
 # A simple test
 if __name__ == '__main__':
-    dset = AjedrezDataset('./image_dataset/metadata.csv', './.')
+    ts = transforms.Compose([
+        transforms.Resize((256)),
+        transforms.ToTensor()
+        ])
 
-    a = dset[0]
+    dset = AjedrezDataset('./image_dataset/metadata.csv', './.', ts)
+
+    print(f'Fetching a single item')
+
+    im, c = dset[0] 
+
+    print(im.shape)
+
+    loader = DataLoader(dset, batch_size=16, shuffle=False, num_workers=2)
+
+    i = 0
+
+    print(f'Iterating through the dataset')
+
+    for (i,(im,c)) in enumerate(loader):
+        print(i, im.shape)
