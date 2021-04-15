@@ -40,7 +40,6 @@ class AjedrezDataset(Dataset):
 # A simple test
 if __name__ == '__main__':
     ts = transforms.Compose([
-        transforms.Resize((256)),
         transforms.ToTensor()
         ])
 
