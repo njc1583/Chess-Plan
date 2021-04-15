@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     im, c = dset[0] 
 
-    print(im.shape)
+    print(im.shape, c.shape)
 
     loader = DataLoader(dset, batch_size=16, shuffle=False, num_workers=2)
 
@@ -59,4 +59,4 @@ if __name__ == '__main__':
     print(f'Iterating through the dataset')
 
     for (i,(im,c)) in enumerate(loader):
-        print(i, im.shape)
+        print(i, im.shape, c.shape)

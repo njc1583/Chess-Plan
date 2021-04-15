@@ -62,14 +62,16 @@ if __name__ == '__main__':
     chessEngine.arrangeBoard(0)
     chessEngine.arrangePieces()
 
-    vis.add("world",world)
-    vis.spin(100)
-
-    chessEngine.arrangeBoard(-90)
-    chessEngine.arrangePieces(randomlyRotatePieces=True)
+    chessEngine.visualizeBoardCorners(vis)
 
     vis.add("world",world)
     vis.spin(100)
+
+    # chessEngine.arrangeBoard(-90)
+    # chessEngine.arrangePieces(randomlyRotatePieces=True)
+
+    # vis.add("world",world)
+    # vis.spin(100)
 
     # chessEngine.arrangeBoard(45)
     # chessEngine.arrangePieces()

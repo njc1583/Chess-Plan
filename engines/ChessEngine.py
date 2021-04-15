@@ -258,6 +258,31 @@ class ChessEngine:
 
         return TileType[ptype]
 
+    def getBoardCorners(self):
+        """
+        Returns (clockwise) the set of points at the corners of the board
+        
+        NOTE: This method has undefined behavior if the board is not rotated by a degree divislbe by 90
+        """
+        [x,y,z] = self.getTableCenter()
+
+        TILE_SPACE = 5
+
+        return [
+            [x-TILE_SCALE[0]*TILE_SPACE, y+TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]],
+            [x+TILE_SCALE[0]*TILE_SPACE, y+TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]],
+            [x+TILE_SCALE[0]*TILE_SPACE, y-TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]],
+            [x-TILE_SCALE[0]*TILE_SPACE, y-TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]]
+        ]
+
+    def visualizeBoardCorners(self, vis):
+        corner_coords = self.getBoardCorners()
+
+        vis.add('corner0', corner_coords[0], scale=0.05, color=(1,0,0,1))
+        vis.add('corner1', corner_coords[1], scale=0.05, color=(0,1,0,1))
+        vis.add('corner2', corner_coords[2], scale=0.05, color=(0,0,1,1))
+        vis.add('corner3', corner_coords[3], scale=0.05, color=(1,0,1,1))
+
     def getPieceArrangement(self):
         """
         Returns of values of PieceEnums in order that they appear in sensor image.

@@ -17,6 +17,8 @@ import os
 import argparse
 import shutil
 
+import cv2
+
 from klampt.robotsim import RigidObjectModel
 sys.path.append("../common")
 sys.path.append("../engines")
@@ -25,6 +27,7 @@ from ChessEngine import ChessEngine
 from PieceEnum import TileType
 
 DIST_FROM_BOARD = 0.5
+RECTIFIED_SIZE = 512
 
 class DataGenerator:
     def __init__(self):
@@ -39,13 +42,21 @@ class DataGenerator:
         self.chessEngine.arrangePieces()
 
         self._imageDir = 'image_dataset'
-        self._colorDir = 'image_dataset/color'
-        self._depthDir = 'image_dataset/depth'
+        self._originalDir = 'image_dataset/original'
+        self._rectifiedDir = 'image_dataset/rectified'
 
         self._metaDataFN = self._imageDir + '/metadata.csv'
 
-        self._colorFNFormat = self._colorDir + '/%06d.png'
-        self._depthFNFormat = self._depthDir + '/%06d.png' 
+        self._dirs = [self._imageDir, self._originalDir, self._rectifiedDir]
+
+        self._origColorFNFormat = self._originalDir + '/color%06d.png'
+        self._origDepthFNFormat = self._originalDir + '/depth%06d.png'
+
+        self._rectColorFNFormat = self._rectifiedDir + '/color%06d.png'
+        self._rectDepthFNFormat = self._rectifiedDir + '/depth%06d.png'
+
+        self._rectifiedPictureCorners = np.float32([[RECTIFIED_SIZE,0],[0,0],[0,RECTIFIED_SIZE],[RECTIFIED_SIZE,RECTIFIED_SIZE]])
+        self._boardWorldCorners = self.chessEngine.getBoardCorners()
 
     def _loadWorld(self, world_fn):
         world = WorldModel()
@@ -85,9 +96,7 @@ class DataGenerator:
         self.sensor = sensor
     
     def _createDatasetDirectory(self):
-        dirs = [self._imageDir, self._colorDir, self._depthDir]
-
-        for d in dirs:
+        for d in self._dirs:
             try:
                 os.mkdir(d)
             except Exception:
@@ -139,7 +148,7 @@ class DataGenerator:
         """
         return self._randomlyRotateCamera(r, r, dist)
 
-    def generateImages(self, max_pics=100, save_depth=True):
+    def generateImages(self, max_pics=100, save_original=False):
         self._createDatasetDirectory()
 
         for i in range(self.world.numRigidObjects()):
@@ -148,31 +157,40 @@ class DataGenerator:
         metadata_f = open(self._metaDataFN, mode='w+')
         metadata_f.write('color,depth,pieces\n')
 
-        def loop_through_sensors(world=self.world, sensor=self.sensor, max_pics=max_pics, save_depth=save_depth):
+        DEPTH_SCALE = 8000
 
-            depth_scale = 8000
-
+        def loop_through_sensors(world=self.world, sensor=self.sensor, max_pics=max_pics):
             for counter in tqdm(range(max_pics)):
                 if counter > 0:
                     self.chessEngine.randomizePieces()
 
+                # Arrange pieces and model world
                 self.chessEngine.arrangePieces()
                 
-                self._randomlyRotateCamera(20, 40)
+                self._randomlyRotateCamera(20, 40, 0.6)
 
                 sensor.kinematicReset()
                 sensor.kinematicSimulate(world, 0.01)
 
-                rgb,depth = sensing.camera_to_images(self.sensor)
+                rgb, depth = sensing.camera_to_images(self.sensor)
 
-                Image.fromarray(rgb).save(self._colorFNFormat % counter)
+                # Project RGB and depth images to rectify them
+                local_corner_coords = np.float32([sensing.camera_project(self.sensor, self.robot, pt)[:2] for pt in self._boardWorldCorners])
+
+                H = cv2.getPerspectiveTransform(local_corner_coords, self._rectifiedPictureCorners)
+                color_rectified = cv2.warpPerspective(rgb, H, (RECTIFIED_SIZE, RECTIFIED_SIZE))
+                depth_rectified = cv2.warpPerspective(depth, H, (RECTIFIED_SIZE, RECTIFIED_SIZE))
+
+                # Save images and write metadata
+                if save_original:
+                    Image.fromarray(rgb).save(self._origColorFNFormat % counter)
+                    Image.fromarray(np.uint32(DEPTH_SCALE * depth)).save(self._origDepthFNFormat % counter)
+
+                Image.fromarray(color_rectified).save(self._rectColorFNFormat % counter)
+                Image.fromarray(np.uint32(DEPTH_SCALE * depth_rectified)).save(self._rectDepthFNFormat % counter)
 
                 pieces_arrangement = self.chessEngine.getPieceArrangement()
-                metadata_f.write(f'{self._colorFNFormat % counter},{self._depthFNFormat % counter},{pieces_arrangement}\n')
-
-                if save_depth:
-                    depth_quantized = (depth * depth_scale).astype(np.uint32)
-                    Image.fromarray(depth_quantized).save(self._depthFNFormat % counter)
+                metadata_f.write(f'{self._rectColorFNFormat % counter},{self._rectDepthFNFormat % counter},{pieces_arrangement}\n')
 
             vis.show(False)
 
@@ -184,7 +202,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--num_images', '-n', help='number of generated images', default=100, type=int)
-    parser.add_argument('--save_depth', '-sd', action='store_true', help='save depth images')
+    parser.add_argument('--save_original', '-so', action='store_true', help='store original images as well')
     parser.add_argument('--delete_dataset', '-dd', action='store_true', help='delete dataset before processing images')
 
     args = parser.parse_args()
@@ -198,4 +216,4 @@ if __name__ == "__main__":
     if args.delete_dataset:
         data_generator.deleteDataset()
 
-    data_generator.generateImages(args.num_images, save_depth=args.save_depth)
+    data_generator.generateImages(args.num_images, args.save_original)
