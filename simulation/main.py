@@ -23,7 +23,6 @@ from ChessEngine import ChessEngine
 from ChessMotion import ChessMotion
 
 PHYSICS_SIMULATION = False  #not implemented correctly yet
-
 if __name__ == '__main__':
     #load the robot / world file
     # fn = "./main.xml"
@@ -50,13 +49,6 @@ if __name__ == '__main__':
         m.estimate(obj.geometry(),mass=0.454,surfaceFraction=0.2)
         obj.setMass(m)
 
-    #load the gripper info and grasp database
-    source_gripper = robotiq_85
-    target_gripper = robotiq_85_kinova_gen3
-    db = grasp_database.GraspDatabase(source_gripper)
-    if not db.load("../data/grasps/robotiq_85_sampled_grasp_db.json"):
-        raise RuntimeError("Can't load grasp database?")
-
     robot = world.robot(0)
     #need to fix the spin joints somewhat
     qmin,qmax = robot.getJointLimits()
@@ -77,10 +69,12 @@ if __name__ == '__main__':
 
     qstart = robot.getConfig()
     motion = ChessMotion(world, robot, chessEngine.boardTiles)
-    # print(chessEngine.boardTiles)
+
     def planTriggered():
-        # robot.setConfig(qstart)
-        path = motion.plan_to_square("E4")
+        global world,robot
+        robot.setConfig(qstart)
+        square = "H8"
+        path = motion.plan_to_square(square)
         if path is None:
             print("Unable to plan pick")
         else:
@@ -90,9 +84,8 @@ if __name__ == '__main__':
             traj = traj.concat(lift,relative=True,jumpPolicy='jump')
             vis.add("traj",traj,endEffectors=[9])
             vis.animate(vis.getItemName(robot),traj)
-        robot.setConfig(qstart)
-
-
+        tTarget = motion.get_square_transform(square)
+        vis.add("targetTransform", tTarget)
     vis.addAction(planTriggered,"Plan to target",'p')
-    # planTriggered()
+
     vis.run()

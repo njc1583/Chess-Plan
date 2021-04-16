@@ -5,6 +5,9 @@ from klampt import vis
 from klampt import RobotModel
 import math
 import time
+import sys
+sys.path.append("../motion")
+from motionGlobals import *
 
 def feasible_plan(world,robot,qtarget):
     """Plans for some number of iterations from the robot's current configuration to

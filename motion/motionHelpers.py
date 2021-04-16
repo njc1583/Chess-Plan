@@ -5,7 +5,8 @@ import gripper
 import known_grippers
 from klampt.math import vectorops,so3,se3
 
-
+sys.path.append("../motion")
+from motionGlobals import *
 finger_pad_links = ['gripper:Link 4','gripper:Link 6']
 gripper_center = vectorops.madd(known_grippers.robotiq_85.center,known_grippers.robotiq_85.primary_axis,known_grippers.robotiq_85.finger_length-0.005)
 gripper_closure_axis = known_grippers.robotiq_85.secondary_axis
@@ -44,9 +45,10 @@ def is_collision_free_grasp(world,robot,object):
         for j in range(robot.numLinks()):
             if robot.link(j).geometry().collides(world.rigidObject(i).geometry()):
                 return False
-    for j in range(robot.numLinks()):
-        if robot.link(j).getName() not in finger_pad_links and robot.link(j).geometry().collides(object.geometry()):
-            return False
+    if object:
+        for j in range(robot.numLinks()):
+            if robot.link(j).getName() not in finger_pad_links and robot.link(j).geometry().collides(object.geometry()):
+                return False
     return True
 
 def retract(robot,gripper,amount,local=True):
@@ -62,7 +64,14 @@ def retract(robot,gripper,amount,local=True):
     if local:
         amount = so3.apply(Tcur[0],amount)
     obj = ik.objective(link,R=Tcur[0],t=vectorops.add(Tcur[1],amount))
-    res = ik.solve(obj)
-    if not res:
-        return None
-    return robot.getConfig()
+    solution = ik.solve(obj)
+    if solution:
+        return robot.getConfig()
+    else:
+        print("Retract IK failed")
+        print("Final config:",robot.getConfig())
+        global DEBUG_MODE
+        if DEBUG_MODE:
+            return robot.getConfig()
+        else:
+            return None
