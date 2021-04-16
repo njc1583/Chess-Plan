@@ -37,7 +37,7 @@ class DataGenerator:
         self.chessEngine.loadPieces()
         self.chessEngine.loadBoard()
 
-        self.chessEngine.arrangeBoard()
+        self.chessEngine.arrangeBoard(90)
         self.chessEngine.arrangePieces()
 
         self._imageDir = 'image_dataset'

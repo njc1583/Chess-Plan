@@ -113,7 +113,7 @@ def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_ep
 if __name__ == "__main__":
     ts = transforms.Compose([transforms.ToTensor()])
 
-    dset = AjedrezDataset('./image_dataset/metadata.csv', './.', ts)
+    dset = AjedrezDataset('./image_dataset/metadata.csv', './.', ts, 11_000)
 
     train_data, test_data = random_split(dset, [10_000, 1_000])
 

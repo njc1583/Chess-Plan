@@ -8,12 +8,16 @@ from torchvision import transforms, utils
 from PIL import Image
 
 class AjedrezDataset(Dataset):
-    def __init__(self, metadata_csv, root_dir, transform=None):
+    def __init__(self, metadata_csv, root_dir, transform=None, num_images=-1):
         self.metadata = pd.read_csv(metadata_csv)
         self.root_dir = root_dir
         self.transform = transform 
+        self.num_images = num_images
 
     def __len__(self):
+        if self.num_images != -1:
+            return self.num_images 
+        
         return len(self.metadata)
 
     def __getitem__(self, index):
