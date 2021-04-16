@@ -24,7 +24,6 @@ sys.path.append("../common")
 sys.path.append("../engines")
 
 from ChessEngine import ChessEngine
-from PieceEnum import TileType
 
 DIST_FROM_BOARD = 0.5
 RECTIFIED_SIZE = 512

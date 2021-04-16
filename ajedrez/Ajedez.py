@@ -6,9 +6,12 @@ import matplotlib.pyplot as plt
 import math
 import time
 import random
+
+import torch.optim
 from tqdm import tqdm
+
 from torchvision import transforms, utils
-from torch.utils.data import Dataset, DataLoader 
+from torch.utils.data import Dataset, DataLoader, random_split 
 
 from DataProcessor import AjedrezDataset
 
@@ -52,56 +55,76 @@ class Ajedrez(nn.Module):
 
         return out
 
-class AJTrainer:
-    def __init__(self, train_loader, test_loader):
-        self._dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+def get_loss(criterion, pred, act):
+    piece_bce = criterion(pred, act) 
 
-        self.Ajedrez = Ajedrez().to(self._dev)
+    # return piece_bce.mean()
 
-        self.train_loader = train_loader
-        self.test_loader = test_loader
+    empty_pred = torch.zeros_like(pred) 
+    empty_act = torch.zeros_like(act)  
 
-        self.criterion = nn.CrossEntropyLoss()
+    amax = pred.argmax(2, keepdim=True)
 
-    def train(self, n_epochs=10):
-        for epoch in tqdm(range(n_epochs)):
-            e_loss = 0.0
+    empty_pred = torch.zeros_like(pred).scatter(2, amax, 1.0)
+    empty_act[act != 0] = 1 
 
-            for imgs,labels in self.train_loader:
-                imgs = imgs.to(self._dev)
-                labels = labels.to(self._dev)
+    empty_bce = criterion(empty_pred, empty_act)
 
-                preds = self.Ajedrez.forward(imgs)
+    return (piece_bce + empty_bce).mean()  
 
-                loss = self._get_loss(preds, labels)
 
-                e_loss += loss.item()
+def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_epochs=10):
+    criterion = nn.CrossEntropyLoss()
 
-                loss.backward()
+    for epoch in tqdm(range(num_epochs)):
+        for imgs,labels in tqdm(train_loader):
+            optimizer.zero_grad()
 
-            print(f'loss for epoch: {epoch}: {e_loss}')
+            imgs = imgs.to(device)
+            labels = labels.to(device)
 
-    def _get_loss(self, pred, act):
-        piece_bce = self.criterion(pred, act) 
+            preds = AJ.forward(imgs)
 
-        empty_pred = torch.zeros_like(pred) 
-        empty_act = torch.zeros_like(act)  
+            loss = get_loss(criterion, preds, labels)
 
-        empty_pred[pred != 0] = 1
-        empty_act[act != 0] = 1 
+            loss.backward()
+            optimizer.step()
 
-        empty_bce = self.criterion(empty_pred, empty_act)
+        AJ.eval()
 
-        return (piece_bce + empty_bce).mean()  
+        t_loss = 0.0
 
+        for timg,tlabels in tqdm(test_loader):
+            timg = timg.to(device)
+            tlabels = tlabels.to(device)
+
+            tpreds = AJ.forward(timg) 
+
+            loss = get_loss(criterion, tpreds, tlabels)
+
+            t_loss += loss.item() 
+
+        t_loss /= len(test_loader)
+
+        print(f'Test loss at epoch {epoch}: {t_loss}')
+
+        lr_scheduler.step()
 
 if __name__ == "__main__":
     ts = transforms.Compose([transforms.ToTensor()])
 
     dset = AjedrezDataset('./image_dataset/metadata.csv', './.', ts)
 
-    loader = DataLoader(dset, batch_size=16, shuffle=False, num_workers=2)
+    train_data, test_data = random_split(dset, [10_000, 1_000])
 
-    trainer = AJTrainer(loader, None)
+    train_loader = DataLoader(train_data, batch_size=64, shuffle=True, num_workers=4)
+    test_loader = DataLoader(test_data, batch_size=64, shuffle=False, num_workers=4)
 
-    trainer.train()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    AJ = Ajedrez().to(device)
+
+    sgd = optim.SGD(AJ.parameters(), lr=0.01, momentum=0.9)
+    scheduler = optim.lr_scheduler.StepLR(sgd, step_size=1, gamma=0.1)
+
+    train(AJ, train_loader, test_loader, sgd, scheduler, device, 10)
