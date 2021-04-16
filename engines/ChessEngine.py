@@ -39,18 +39,24 @@ class ChessEngine:
         self.board_rotation = 0
 
         self.pieceRotations = {}
-        self.pieceRotations['N'] = math.pi 
-        self.pieceRotations['B'] = math.pi/2
-        self.pieceRotations['b'] = -math.pi/2
+        self.pieceRotations['N'] = math.pi/2
+        self.pieceRotations['n'] = -math.pi/2 
+        self.pieceRotations['K'] = math.pi/2
+        self.pieceRotations['k'] = -math.pi/2
+        self.pieceRotations['b'] = math.pi
 
-    def _pieceNameToPiece(self, name):
+    @classmethod
+    def pieceNameToPiece(cls, name):
+        """ Takes the name of a chesspiece and returns the python-chess
+        Piece type
+        """
         split_name = name.split('_')
 
         black = split_name[1] == 'b'
 
-        symbol = name[0]
+        symbol = split_name[0][0]
 
-        if name[0] == 'Knight':
+        if split_name[0] == 'Knight':
             symbol = 'N'
 
         if black: 
@@ -58,24 +64,30 @@ class ChessEngine:
 
         return Piece.from_symbol(symbol)
 
-    def _getPieceRotation(self, name):
-        ptype = self._pieceNameToPiece(name)
-
-        if ptype in self.pieceRotations:
-            return self.pieceRotations[ptype]
-        else:
-            return 0
-
-    def _pieceNameToNumber(self, name):
+    @classmethod
+    def pieceNameToNumber(cls, name):
+        """ Converts the chess piece name into a number
+        """
         if name is None:
             return 0
 
-        piece = self._pieceNameToPiece(name)
+        piece = ChessEngine.pieceNameToPiece(name)
 
         if piece.color:
             return piece.piece_type
         
         return piece.piece_type + 6
+
+
+    def _getPieceRotation(self, name):
+        """ Returns default rotation of a piece (default 0 for most pieces)
+        """
+        ptype = ChessEngine.pieceNameToPiece(name)
+
+        if ptype.symbol() in self.pieceRotations:
+            return self.pieceRotations[ptype.symbol()]
+        else:
+            return 0
 
     def _getPieceNumberAtTile(self, tilename):
         """
@@ -83,7 +95,10 @@ class ChessEngine:
         """
         pname, piece = self.boardTiles[tilename][PIECE] 
 
-        return self._pieceNameToNumber(pname)
+        if piece is None:
+            return 0
+
+        return ChessEngine.pieceNameToNumber(pname)
 
     def _clearBoard(self):
         """ Removes all current pieces from the board
@@ -127,8 +142,8 @@ class ChessEngine:
         table_c_x = (table_bmax[0] + table_bmin[0]) / 2
         table_c_y = (table_bmax[1] + table_bmin[1]) / 2
 
-        for i,file_name in enumerate(chess.FILE_NAMES):
-            for j,rank_name in enumerate(chess.RANK_NAMES):
+        for i,rank_name in enumerate(chess.RANK_NAMES):
+            for j,file_name in enumerate(chess.FILE_NAMES):
                 tilename = file_name + rank_name
 
                 sx = (i - 4) * TILE_SCALE[0]
@@ -214,8 +229,10 @@ class ChessEngine:
             o.appearance().setColor(r,g,b,a)
             oname = f'{name}_{colorn}_{i}'
 
+            o.setName(oname)
+
             objs.append((oname, o))
-            self.world.add(oname, o)
+            # self.world.add(oname, o)
 
             # TODO: Remove in later dates
             # Known bug that objects appear near the center of the world
@@ -311,8 +328,8 @@ class ChessEngine:
         """
         arrangement = []
 
-        for file_name in chess.FILE_NAMES[::-1]:
-            for rank_name in chess.RANK_NAMES: 
+        for rank_name in chess.RANK_NAMES[::-1]:                 
+            for file_name in chess.FILE_NAMES:
                 tilename = file_name + rank_name
                 arrangement.append(str(self._getPieceNumberAtTile(tilename)))
 
