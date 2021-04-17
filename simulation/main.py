@@ -29,6 +29,7 @@ if __name__ == '__main__':
     fn = "./worlds/default.xml"
     world = WorldModel()
     res = world.readFile(fn)
+    print(res)
     if not res:
         fn = "./main.xml"
         world = WorldModel()
