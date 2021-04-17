@@ -46,6 +46,18 @@ class ChessEngine:
         self.pieceRotations['b'] = math.pi
 
     @classmethod
+    def numberToPiece(cls, number):
+        if number <= 0 or number > 12:
+            return None 
+
+        white = number <= 6 
+
+        if not white:
+            number -= 6 
+
+        return Piece(number, white)
+
+    @classmethod
     def pieceNameToPiece(cls, name):
         """ Takes the name of a chesspiece and returns the python-chess
         Piece type

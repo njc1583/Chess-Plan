@@ -7,6 +7,8 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
 from PIL import Image
 
+IMAGE_SIZE = 640
+
 class AjedrezDataset(Dataset):
     def __init__(self, metadata_csv, root_dir, transform=None, num_images=-1):
         self.metadata = pd.read_csv(metadata_csv)
@@ -31,7 +33,7 @@ class AjedrezDataset(Dataset):
 
         pieces = self.metadata.iloc[index,2]
 
-        classes = torch.tensor([int(x) for x in pieces.split(';')])
+        classes = torch.tensor([int(x) for x in pieces.split(';')], dtype=torch.uint8)
 
         if self.transform is not None:
             color_img = self.transform(color_img)
@@ -39,7 +41,39 @@ class AjedrezDataset(Dataset):
 
         concat_img = torch.cat((color_img,depth_img), dim=0)
 
-        return (concat_img, classes) 
+        B, H, W, C = 36, IMAGE_SIZE//10, IMAGE_SIZE//10, 4
+        split_img = torch.zeros(B, C, 3*H, 3*W)
+
+        classes_idx = torch.zeros((B,), dtype=torch.int64)
+
+        # Retrieve non-empty classes
+        piece_classes_idx = (classes != 0).nonzero().flatten()
+
+        randomized_empty_idx = torch.randperm(31)[:4]
+        empty_classes_idx = ((classes == 0).nonzero().flatten())[randomized_empty_idx]
+
+        classes_idx[:32] = piece_classes_idx
+        classes_idx[32:] = empty_classes_idx
+
+        # print(classes)
+        # print(classes_idx)
+        # print(torch.gather(classes, 0, classes_idx))
+
+        for split_img_idx,idx in enumerate(classes_idx):
+            i = idx.item()
+
+            row = i // 8
+            col = i % 8
+
+            split_img[split_img_idx] = concat_img[:,row*W:(row+3)*W,col*H:(col+3)*H]
+
+        # for bx in range(8):
+        #     for by in range(8):
+        #         split_img[bx*8+by] = concat_img[:,bx*W:bx*W+3*W,by*H:by*H+3*H]
+
+        out_classes = torch.gather(classes, 0, classes_idx).type(torch.long)
+
+        return (split_img, out_classes) 
 
 # A simple test
 if __name__ == '__main__':
@@ -55,11 +89,13 @@ if __name__ == '__main__':
 
     print(im.shape, c.shape)
 
-    loader = DataLoader(dset, batch_size=16, shuffle=False, num_workers=2)
+    # print(c)
 
-    i = 0
+    # loader = DataLoader(dset, batch_size=16, shuffle=False, num_workers=2)
 
-    print(f'Iterating through the dataset')
+    # i = 0
 
-    for (i,(im,c)) in enumerate(loader):
-        print(i, im.shape, c.shape)
+    # print(f'Iterating through the dataset')
+
+    # for (i,(im,c)) in enumerate(loader):
+    #     print(i, im.shape, c.shape)

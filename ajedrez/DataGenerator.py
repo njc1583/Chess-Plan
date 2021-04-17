@@ -26,7 +26,8 @@ sys.path.append("../engines")
 from ChessEngine import ChessEngine
 
 DIST_FROM_BOARD = 0.5
-RECTIFIED_SIZE = 512
+
+RECTIFIED_SIZE = 640
 
 class DataGenerator:
     def __init__(self):
@@ -161,7 +162,7 @@ class DataGenerator:
         def loop_through_sensors(world=self.world, sensor=self.sensor, max_pics=max_pics):
             for counter in tqdm(range(max_pics)):
                 if counter > 0:
-                    self.chessEngine.randomizePieces()
+                    self.chessEngine.randomizePieces(32)
 
                 # Arrange pieces and model world
                 self.chessEngine.arrangePieces()
