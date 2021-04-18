@@ -19,6 +19,8 @@ import shutil
 
 import cv2
 
+import DataUtils
+
 from klampt.robotsim import RigidObjectModel
 sys.path.append("../common")
 sys.path.append("../engines")
@@ -26,8 +28,6 @@ sys.path.append("../engines")
 from ChessEngine import ChessEngine
 
 DIST_FROM_BOARD = 0.5
-
-RECTIFIED_SIZE = 640
 
 class DataGenerator:
     def __init__(self):
@@ -55,7 +55,12 @@ class DataGenerator:
         self._rectColorFNFormat = self._rectifiedDir + '/color%06d.png'
         self._rectDepthFNFormat = self._rectifiedDir + '/depth%06d.png'
 
-        self._rectifiedPictureCorners = np.float32([[RECTIFIED_SIZE,0],[0,0],[0,RECTIFIED_SIZE],[RECTIFIED_SIZE,RECTIFIED_SIZE]])
+        self._rectifiedPictureCorners = np.float32([
+            [DataUtils.IMAGE_SIZE,0],
+            [0,0],
+            [0,DataUtils.IMAGE_SIZE],
+            [DataUtils.IMAGE_SIZE,DataUtils.IMAGE_SIZE]
+        ])
         self._boardWorldCorners = self.chessEngine.getBoardCorners()
 
     def _loadWorld(self, world_fn):
@@ -178,8 +183,8 @@ class DataGenerator:
                 local_corner_coords = np.float32([sensing.camera_project(self.sensor, self.robot, pt)[:2] for pt in self._boardWorldCorners])
 
                 H = cv2.getPerspectiveTransform(local_corner_coords, self._rectifiedPictureCorners)
-                color_rectified = cv2.warpPerspective(rgb, H, (RECTIFIED_SIZE, RECTIFIED_SIZE))
-                depth_rectified = cv2.warpPerspective(depth, H, (RECTIFIED_SIZE, RECTIFIED_SIZE))
+                color_rectified = cv2.warpPerspective(rgb, H, (DataUtils.IMAGE_SIZE, DataUtils.IMAGE_SIZE))
+                depth_rectified = cv2.warpPerspective(depth, H, (DataUtils.IMAGE_SIZE, DataUtils.IMAGE_SIZE))
 
                 # Save images and write metadata
                 if save_original:

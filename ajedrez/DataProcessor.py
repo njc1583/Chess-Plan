@@ -1,24 +1,37 @@
-import os
 import torch 
 import pandas as pd 
-from skimage import io, transform
-import numpy as np 
-from torch.utils.data import Dataset, DataLoader 
-from torchvision import transforms, utils
+from skimage import io
+from torch.utils.data import Dataset 
+from torchvision import transforms
 from PIL import Image
 
-IMAGE_SIZE = 640
+import DataUtils
 
 class AjedrezDataset(Dataset):
-    def __init__(self, metadata_csv, root_dir, transform=None, num_images=-1):
+    def __init__(self, metadata_csv, dataset_size=0, 
+        use_depth=False, color_transform=None, depth_transform=None,
+        full_image=False, class_distribution=None):
+        
         self.metadata = pd.read_csv(metadata_csv)
-        self.root_dir = root_dir
-        self.transform = transform 
-        self.num_images = num_images
+        
+        self.dataset_size = dataset_size
+
+        self.use_depth = use_depth
+
+        self.color_transform = color_transform
+        self.depth_transform = depth_transform
+
+        self.full_image = full_image
+        self.class_distribution = class_distribution
+
+        if not self.full_image and self.class_distribution is None:
+            raise Exception('If not using full images; user must specify a class distribution')
+        elif self.class_distribution is not None and len(self.class_distribution) != 13:
+            raise Exception('Class distribution must be size 13')
 
     def __len__(self):
-        if self.num_images != -1:
-            return self.num_images 
+        if self.dataset_size > 0:
+            return self.dataset_size 
         
         return len(self.metadata)
 
@@ -28,39 +41,51 @@ class AjedrezDataset(Dataset):
 
         filenames = self.metadata.iloc[index, 0:2]
 
-        color_img = Image.fromarray(io.imread(filenames[0]), 'RGB')
-        depth_img = Image.fromarray(io.imread(filenames[1]), 'L')
-
         pieces = self.metadata.iloc[index,2]
-
         classes = torch.tensor([int(x) for x in pieces.split(';')], dtype=torch.uint8)
 
-        if self.transform is not None:
-            color_img = self.transform(color_img)
-            # depth_img = self.transform(depth_img)
+        color_img = Image.fromarray(io.imread(filenames[0]), 'RGB')
 
-        # concat_img = torch.cat((color_img,depth_img), dim=0)
+        if self.color_transform:
+            color_img = self.color_transform(color_img)
 
-        B, H, W, C = 13, IMAGE_SIZE//10, IMAGE_SIZE//10, 3
+        if self.use_depth:
+            depth_img = Image.fromarray(io.imread(filenames[1]), 'L')
+
+            if self.depth_transform is not None:
+                depth_img = self.depth_transform(depth_img)
+
+        if self.use_depth:
+            concat_img = torch.cat((color_img,depth_img), dim=0)
+        else:
+            concat_img = color_img
+
+        if self.full_image:
+            B = 64
+        else:
+            B = sum(self.class_distribution)
+
+        H = DataUtils.IMAGE_SIZE // 10
+        W = DataUtils.IMAGE_SIZE // 10
+        C = 4 if self.use_depth else 3
+
         split_img = torch.zeros(B, C, 2*H, W)
 
-        classes_idx = torch.zeros((B,), dtype=torch.int64)
+        if self.full_image:
+            classes_idx = torch.arange(B, dtype=torch.int64)
+        else:
+            classes_idx = torch.zeros((B,), dtype=torch.int64)
 
-        for i in range(13):
-            same_class_idx = (classes == i).nonzero().flatten()
+            num_classes = 0
 
-            randomized_idx = torch.randperm(same_class_idx.shape[0])[0]
+            for (i,num_sample_class) in enumerate(self.class_distribution):
+                same_class_idx = (classes == i).nonzero().flatten()
 
-            classes_idx[i] = same_class_idx[randomized_idx]
+                randomized_idx = torch.randperm(same_class_idx.shape[0])[:num_sample_class]
 
-        # Retrieve non-empty classes
-        # piece_classes_idx = (classes != 0).nonzero().flatten()
+                classes_idx[num_classes:num_classes+num_sample_class] = same_class_idx[randomized_idx]
 
-        # randomized_empty_idx = torch.randperm(31)[:4]
-        # empty_classes_idx = ((classes == 0).nonzero().flatten())[randomized_empty_idx]
-
-        # classes_idx[:32] = piece_classes_idx
-        # classes_idx[32:] = empty_classes_idx
+                num_classes += num_sample_class
 
         for split_img_idx,idx in enumerate(classes_idx):
             i = idx.item()
@@ -68,36 +93,56 @@ class AjedrezDataset(Dataset):
             row = i // 8
             col = i % 8
 
-            img = color_img[:,(row)*W:(row+2)*W,(col+1)*H:(col+2)*H]
+            img = concat_img[:,(row)*W:(row+2)*W,(col+1)*H:(col+2)*H]
 
             split_img[split_img_idx] = img
 
-        # out_classes = torch.gather(classes, 0, classes_idx).type(torch.long)
-        out_classes = torch.arange(0, 13)
+        out_classes = torch.gather(classes, 0, classes_idx).type(torch.long)
 
         return (split_img, out_classes) 
 
 # A simple test
 if __name__ == '__main__':
-    ts = transforms.Compose([
-        transforms.ToTensor()
-        ])
+    color_transforms = transforms.Compose([transforms.ToTensor()])
+    depth_transforms = transforms.Compose([transforms.ToTensor()])
 
-    dset = AjedrezDataset('./image_dataset/metadata.csv', './.', ts)
+    print(f'Full Image Dataset')
 
-    print(f'Fetching a single item')
+    dset_full = AjedrezDataset('./image_dataset/metadata.csv', './.', 
+        use_depth=True, 
+        color_transform=color_transforms, 
+        depth_transform=depth_transforms,
+        full_image=True
+    )
 
-    im, c = dset[0] 
+    im, c = dset_full[0] 
 
-    print(im.shape, c.shape)
+    print(im.shape, c)
 
-    # print(c)
+    print(f'Uniform Distribution')
 
-    # loader = DataLoader(dset, batch_size=16, shuffle=False, num_workers=2)
+    dset_uniform = AjedrezDataset('./image_dataset/metadata.csv', './.', 
+        use_depth=True, 
+        color_transform=color_transforms, 
+        depth_transform=depth_transforms,
+        full_image=False,
+        class_distribution=DataUtils.UNIFORM_DISTRIBUTION
+    )
 
-    # i = 0
+    im, c = dset_uniform[0] 
 
-    # print(f'Iterating through the dataset')
+    print(im.shape, c)
 
-    # for (i,(im,c)) in enumerate(loader):
-    #     print(i, im.shape, c.shape)
+    print(f'Limited Distribution')
+
+    dset_modified = AjedrezDataset('./image_dataset/metadata.csv', './.', 
+        use_depth=True, 
+        color_transform=color_transforms, 
+        depth_transform=depth_transforms,
+        full_image=False,
+        class_distribution=DataUtils.LIMITED_DISTRIBUTION
+    )
+
+    im, c = dset_modified[0] 
+
+    print(im.shape, c)
