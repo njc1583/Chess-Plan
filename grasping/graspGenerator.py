@@ -16,7 +16,7 @@ import normals
 from world_generator import save_world
 
 import grasp
-import grasp_database
+from grasp_database import *
 from known_grippers import *
 
 from loadObjs import *
@@ -25,12 +25,31 @@ PHYSICS_SIMULATION = False  #not implemented correctly yet
 if __name__ == '__main__':
     #load the robot / world file
 
+    fn = "./main.xml"
     world = WorldModel()
+    res = world.readFile(fn)
+    robot = world.robot(0)
+    qmin,qmax = robot.getJointLimits()
+    for i in range(len(qmin)):
+        if qmax[i] - qmin[i] > math.pi*2:
+            qmin[i] = -float('inf')
+            qmax[i] = float('inf')
+    robot.setJointLimits(qmin,qmax)
+    qstart = robot.getConfig()
+    
     piece = loadPiece(world, "Pawn")[0]
+    vis.add("world",world)
+
     print(piece)
     bmin,bmax = piece[1].geometry().getBBTight()
     print(bmin,bmax)
     gripper = robotiq_85_kinova_gen3
+    db = GraspDatabase(gripper)
+    try: db.load("../grasping/chess_grasps.json")
+    except:
+        print("Creating new grasp db")
+
+    db.add_object(piece[1].getName())
     for i in range(world.numRigidObjects()):
         obj = world.rigidObject(i)
         #this will perform a reasonable center of mass / inertia estimate
@@ -43,10 +62,15 @@ if __name__ == '__main__':
     t1 = time.time()
     print("Sampled grasps in",t1-t0,"s, min scoring grasp",grasps[0][1], "numgrasps:", len(grasps))
     for i,(g,s) in enumerate(grasps):
+        db.add_grasp(piece[1], g.genGrasp(robot))
         name = "grasp{}".format(i)
-        u = math.exp(-(s-grasps[0][1])*2)
-        g.add_to_vis(name,(1-u,u,0,1)) 
+        # u = math.exp(-(s-grasps[0][1])*2)
+        # g.add_to_vis(name) 
+    # print(db.object_to_grasps)
+    db.save("chess_grasps.json")
+    # print(qstart)
+    # robot.setConfig(qstart)
+
     vis.add("pose", piece[1].getTransform())
-    vis.add("world",world)
     vis.run()
 

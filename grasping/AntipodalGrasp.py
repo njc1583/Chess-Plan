@@ -11,6 +11,7 @@ import random
 import sys
 sys.path.append('../common')
 import gripper
+from grasp import *
 import known_grippers
 import normals
 
@@ -36,9 +37,10 @@ class AntipodalGrasp:
         contact2 (ContactPoint, optional): another point of contact on the
             object.
     """
-    def __init__(self,center,axis):
+    def __init__(self,center,axis, gripper):
         self.center = center
         self.axis = axis
+        self.gripper = gripper
         self.approach = None
         self.finger_width = None
         self.contact1 = None
@@ -62,7 +64,29 @@ class AntipodalGrasp:
         if self.contact2 is not None:
             vis.add(name+"cp2",self.contact2.x,color=(1,1,0,1),size=0.01)
             vis.add(name+"cp2_normal",[self.contact2.x,vectorops.madd(self.contact2.x,self.contact2.n,normallen)],color=(1,1,0,1))
-
+    def genIKObjective(self, robot):
+        minSpan,maxSpan = self.gripper.minimum_span,self.gripper.maximum_span
+        endWidth = (self.finger_width-minSpan)/(maxSpan-minSpan)
+        fclose = self.gripper.partway_open_config(endWidth)
+        # set colsed finger config
+        robot.setConfig(self.gripper.set_finger_config(robot.getConfig(),fclose))
+        
+        # T_ow = obj.getTransform() # object to world
+        # grasp_w = AntipodalGrasp(se3.apply(T_ow,grasp_local.center),se3.apply_rotation(T_ow,grasp_local.axis))
+        finger_center = vectorops.add(self.gripper.center,vectorops.mul(self.gripper.primary_axis,self.gripper.finger_length))
+        # solve to get finger_center->grasp_center, finger_axis_pt->grasp_axis_pt
+        finger_axis_pt = vectorops.add(finger_center,vectorops.mul(self.gripper.secondary_axis,0.01))
+        grasp_axis_pt = vectorops.add(self.center,vectorops.mul(self.axis,0.01))
+        link = robot.link(self.gripper.base_link)
+        goal = ik.objective(link,local=[finger_center, finger_axis_pt],world=[self.center,grasp_axis_pt])
+        return goal
+    def genGrasp(self, robot):
+        grasp = Grasp(  ik_constraint=self.genIKObjective(robot),
+                        finger_links=self.gripper.finger_links,
+                        finger_config=self.gripper.partway_open_config(self.gripper.width_to_opening(self.finger_width)),
+                        contacts=[self.contact1, self.contact2],
+                        score=self.gripper.width_to_opening(self.finger_width))
+        return grasp
 def grasp_from_contacts(contact1,contact2):
     """Helper: if you have two contacts, this returns an AntipodalGrasp"""
     d = vectorops.unit(vectorops.sub(contact2.x,contact1.x))
@@ -149,7 +173,7 @@ def antipodal_grasp_sample_volume(gripper,rigid_object,k):
         for j in range(10):
             axis = [np.random.uniform(low=-2*np.pi, high=2*np.pi),np.random.uniform(low=-2*np.pi, high=2*np.pi),0]
             axis = vectorops.unit(axis)
-            grasp = AntipodalGrasp(center, axis)
+            grasp = AntipodalGrasp(center, axis, gripper)
             fill_in_grasp(grasp,rigid_object, object_normals)
             if grasp.finger_width == None:
                 print("Fail:",grasp.center, grasp.axis, grasp.contact1, grasp.contact2)
