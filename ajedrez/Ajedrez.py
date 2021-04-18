@@ -8,6 +8,7 @@ import time
 import random
 
 import torch.optim
+from torchvision.transforms.transforms import Normalize
 from tqdm.notebook import tqdm
 
 from torchvision import transforms, utils
@@ -15,99 +16,57 @@ from torch.utils.data import Dataset, DataLoader, random_split
 
 from DataProcessor import AjedrezDataset
 
+from torchvision.models import resnet
+
 NUM_CLASSES = 13
 
 class Ajedrez(nn.Module):
     def __init__(self, input_channels):
         super(Ajedrez, self).__init__()
 
-        # self.seq = nn.Sequential(
-        #     nn.Conv2d(4, 4, 3, 1, 1),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(2),
-        #     nn.Conv2d(4, 8, 3, 1, 1),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(2),
-        #     nn.Conv2d(8, 16, 3, 1, 1),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(2),
-        #     nn.Conv2d(16, 32, 3, 1, 1),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(2),
-        #     nn.Conv2d(32, 64, 3, 1, 1),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(2),
-        #     nn.Conv2d(64, 128, 3, 1, 1),
-        #     nn.ReLU(),
-        #     nn.MaxPool2d(2),
-        #     nn.Conv2d(128, 13, 3, 1, 1),
-        #     nn.ReLU(),
-        #     nn.Flatten()
-        # )
-
         self.input_channels = input_channels
 
         self.seq = nn.Sequential(
-            nn.Conv2d(input_channels, 4, 3, 1, 1),
+            nn.Conv2d(input_channels, 8, 3, 1, 1),
             nn.ReLU(),
             nn.MaxPool2d(2),
-            nn.Conv2d(4, 8, 3, 1, 1),
-            nn.ReLU(),
+            resnet.BasicBlock(8, 8),
             nn.MaxPool2d(2),
             nn.Conv2d(8, 16, 3, 1, 1),
             nn.ReLU(),
             nn.MaxPool2d(2),
-            nn.Conv2d(16, 32, 3, 1, 1),
-            nn.ReLU(),
+            resnet.BasicBlock(16, 16),
             nn.MaxPool2d(2),
-            nn.Conv2d(32, 64, 3, 1, 1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.Conv2d(64, 128, 3, 1, 1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.Conv2d(128, 256, 3, 1, 1),
-            nn.ReLU(),
             nn.Flatten(),
-            nn.Linear(2304, 832),
+            nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Linear(832, 13),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, 13),
             nn.ReLU()
         )
+
+        self._weight_init()
 
     def forward(self, x):
         out = self.seq(x)
         
-        # B, C, H, W = x.shape
-
-        # Output size should be [Batch Size x 13 x 64]
-        # out = out.reshape(B, NUM_CLASSES, 64)
-
         return out
+
+    def _weight_init(self):
+        for child in self.seq.children():
+            if isinstance(child, nn.Conv2d):
+                for name, param in child.named_parameters():
+                    if name in ['bias']:
+                        nn.init.zeros_(param)
+                    else:
+                        nn.init.xavier_normal_(param, nn.init.calculate_gain('relu'))
 
 def get_loss(criterion, pred, act):
     # BCE on which piece was selected
     piece_bce = criterion(pred, act) 
 
     return piece_bce
-
-    # Correclty identifies if the tile was empty
-    # 0 = empty, 1 = piece
-    # empty_act = torch.zeros_like(act)  
-    # empty_act[act != 0] = 1 
-
-    # amax = pred.argmax(dim=1)    
-    # empty_pred = torch.ones_like(act)
-    # empty_pred[amax == 0] = 0 
-
-    # print(empty_pred.shape, empty_act.shape)
-
-    # bceloss = nn.BCELoss() 
-    
-    # empty_bce = bceloss(empty_pred, empty_act)
-
-    # return (piece_bce + empty_bce).mean()  
-
 
 def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_epochs=10):
     criterion = nn.CrossEntropyLoss()
@@ -133,7 +92,9 @@ def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_ep
 
             loss = get_loss(criterion, preds, train_labels)
 
-            train_loss += loss.mean().item()
+            # print(f'Loss during epoch: {loss}')
+
+            train_loss += loss.item()
 
             loss.backward()
             optimizer.step()
@@ -143,33 +104,34 @@ def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_ep
         print(f'Training Loss at Epoch: {epoch}: {train_loss}')
 
         AJ.eval()
+        with torch.no_grad():
+            test_loss = 0.0
 
-        test_loss = 0.0
+            for test_images,test_labels in tqdm(test_loader):
+                if len(test_images.shape) == 5:
+                    B1, B2, C, H, W = test_images.shape
+                
+                    test_images = test_images.reshape(B1*B2,C,H,W)
+                    test_labels = test_labels.reshape(B1*B2,)
 
-        for test_images,test_labels in tqdm(test_loader):
-            if len(test_images.shape) == 5:
-                B1, B2, C, H, W = test_images.shape
-            
-                test_images = test_images.reshape(B1*B2,C,H,W)
-                test_labels = test_labels.reshape(B1*B2,)
+                test_images = test_images.to(device)
+                test_labels = test_labels.to(device)
 
-            test_images = test_images.to(device)
-            test_labels = test_labels.to(device)
+                tpreds = AJ.forward(test_images) 
 
-            tpreds = AJ.forward(test_images) 
+                loss = get_loss(criterion, tpreds, test_labels)
 
-            loss = get_loss(criterion, tpreds, test_labels)
+                test_loss += loss.item() 
 
-            test_loss += loss.mean().item() 
+            test_loss /= len(test_loader)
 
-        test_loss /= len(test_loader)
-
-        print(f'Test Loss at Epoch: {epoch}: {test_loss}')
+            print(f'Test Loss at Epoch: {epoch}: {test_loss}')
 
         lr_scheduler.step()
 
 if __name__ == "__main__":
-    ts = transforms.Compose([transforms.ToTensor()])
+    ts = transforms.Compose([
+        transforms.ToTensor()])
 
     dset = AjedrezDataset('./image_dataset/metadata.csv', './.', ts, 10)
 

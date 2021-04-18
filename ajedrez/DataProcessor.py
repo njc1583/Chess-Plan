@@ -37,27 +37,30 @@ class AjedrezDataset(Dataset):
 
         if self.transform is not None:
             color_img = self.transform(color_img)
-            depth_img = self.transform(depth_img)
+            # depth_img = self.transform(depth_img)
 
-        concat_img = torch.cat((color_img,depth_img), dim=0)
+        # concat_img = torch.cat((color_img,depth_img), dim=0)
 
-        B, H, W, C = 36, IMAGE_SIZE//10, IMAGE_SIZE//10, 4
-        split_img = torch.zeros(B, C, 3*H, 3*W)
+        B, H, W, C = 13, IMAGE_SIZE//10, IMAGE_SIZE//10, 3
+        split_img = torch.zeros(B, C, 2*H, W)
 
         classes_idx = torch.zeros((B,), dtype=torch.int64)
 
+        for i in range(13):
+            same_class_idx = (classes == i).nonzero().flatten()
+
+            randomized_idx = torch.randperm(same_class_idx.shape[0])[0]
+
+            classes_idx[i] = same_class_idx[randomized_idx]
+
         # Retrieve non-empty classes
-        piece_classes_idx = (classes != 0).nonzero().flatten()
+        # piece_classes_idx = (classes != 0).nonzero().flatten()
 
-        randomized_empty_idx = torch.randperm(31)[:4]
-        empty_classes_idx = ((classes == 0).nonzero().flatten())[randomized_empty_idx]
+        # randomized_empty_idx = torch.randperm(31)[:4]
+        # empty_classes_idx = ((classes == 0).nonzero().flatten())[randomized_empty_idx]
 
-        classes_idx[:32] = piece_classes_idx
-        classes_idx[32:] = empty_classes_idx
-
-        # print(classes)
-        # print(classes_idx)
-        # print(torch.gather(classes, 0, classes_idx))
+        # classes_idx[:32] = piece_classes_idx
+        # classes_idx[32:] = empty_classes_idx
 
         for split_img_idx,idx in enumerate(classes_idx):
             i = idx.item()
@@ -65,13 +68,12 @@ class AjedrezDataset(Dataset):
             row = i // 8
             col = i % 8
 
-            split_img[split_img_idx] = concat_img[:,row*W:(row+3)*W,col*H:(col+3)*H]
+            img = color_img[:,(row)*W:(row+2)*W,(col+1)*H:(col+2)*H]
 
-        # for bx in range(8):
-        #     for by in range(8):
-        #         split_img[bx*8+by] = concat_img[:,bx*W:bx*W+3*W,by*H:by*H+3*H]
+            split_img[split_img_idx] = img
 
-        out_classes = torch.gather(classes, 0, classes_idx).type(torch.long)
+        # out_classes = torch.gather(classes, 0, classes_idx).type(torch.long)
+        out_classes = torch.arange(0, 13)
 
         return (split_img, out_classes) 
 
