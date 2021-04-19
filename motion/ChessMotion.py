@@ -15,6 +15,7 @@ from known_grippers import robotiq_85_kinova_gen3
 from motionHelpers import *
 from planning import *
 from motionGlobals import *
+import grasp_database
 
 class ChessMotion:
     """
@@ -35,18 +36,22 @@ class ChessMotion:
         self.gripper = robotiq_85_kinova_gen3
         self.board = board
         self.currentObject = None
-
+        self.db = grasp_database.GraspDatabase(self.gripper)
+        if not self.db.load("../grasping/chess_grasps.json"):
+            raise RuntimeError("Can't load grasp database?")
     def plan_to_square(self, square):#world,robot,object,gripper,grasp):
         tile = self.board[square]['tile']
         print("TILE:",tile.getTransform())
         return self.plan_pick_one(self.get_square_transform(square))
-    def get_square_transform(self, square):
-        tile = self.board[square]['tile']
-        R,t = tile.getTransform()
-        R_flip_y = so3.rotation([1,0,0],math.pi)
-        R = so3.mul(R_flip_y,R) # makes gripper face downward
-        t = vectorops.add(t, [0,0,0.2])# add 20 cm in z to avoid collision
-        return (R,t)
+    # def get_square_transform(self, square):
+        
+    #     # R_flip_y = so3.rotation([1,0,0],math.pi)
+    #     # R = so3.mul(R_flip_y,R) # makes gripper face downward
+    #     # t = vectorops.add(t, [0,0,0.2])# add 20 cm in z to avoid collision
+    #     # return (R,t)
+    def plan_to_piece(self,square):
+        piece = self.board[square]['piece']
+        return self.plan_pick_one(piece[1])
     def go_to_square(self,square):
         return self.solve_robot_ik(self.get_square_transform(square))
     def check_collision(self):
@@ -76,36 +81,25 @@ class ChessMotion:
                 return self.robot.getConfig()
             else:
                 return None
-    def plan_pick_one(self,Target):#world,robot,object,gripper,grasp):
-        """
-        Plans a picking motion for a given object and a specified grasp.
-
-        Arguments:
-            
-            grasp (Grasp): the desired grasp. See common/grasp.py for more information.
-
-        Returns:
-            None or (transit,approach,lift): giving the components of the pick motion.
-            Each element is a RobotTrajectory.  (Note: to convert a list of milestones
-            to a RobotTrajectory, use RobotTrajectory(robot,milestones=milestones)
-
-        Tip:
-            vis.debug(q,world=world) will show a configuration.
-        """
+    def get_object_grasps(self, name, T_obj):
+        orig_grasps = self.db.object_to_grasps[name]
+        grasps = [grasp.get_transformed(T_obj) for grasp in orig_grasps]
+        return grasps
+    def plan_pick_one(self,obj, grasp):#world,robot,object,gripper,grasp):
         qstart = self.robot.getConfig()
 
-        # grasp.ik_constraint.robot = robot  #this makes it more convenient to use the ik module
+        grasp.ik_constraint.robot = self.robot  #this makes it more convenient to use the ik module
 
-        qgrasp = qstart
-        solution = self.solve_robot_ik(Target)
+        # qgrasp = qstart
+        solution = ik.solve_global(grasp.ik_constraint, iters=100, numRestarts = 10, feasibilityCheck=self.check_collision)
         if not solution:
             self.robot.setConfig(qstart)
             print("Solution Failed")
             return None
         qgrasp = self.robot.getConfig()
-        # qgrasp = grasp.set_finger_config(qgrasp)  #open the fingers the right amount
-        qopen = self.gripper.set_finger_config(qgrasp,self.gripper.partway_open_config(1))   #open the fingers further
-        distance = 0.2
+        qgrasp = grasp.set_finger_config(qgrasp)  #open the fingers the right amount
+        qopen = self.gripper.set_finger_config(qgrasp,self.gripper.partway_open_config(grasp.score + 0.1))   #open the fingers further
+        distance = 0.1
         qpregrasp = retract(self.robot, self.gripper, vectorops.mul(self.gripper.primary_axis,-1*distance), local=True)   #TODO solve the retraction problem for qpregrasp?
         qstartopen = self.gripper.set_finger_config(qstart,self.gripper.partway_open_config(1))  #open the fingers of the start to match qpregrasp
         self.robot.setConfig(qstartopen)
@@ -128,3 +122,17 @@ class ChessMotion:
         
         return (RobotTrajectory(self.robot,milestones=[qstart]+transit),RobotTrajectory(self.robot,milestones=[qpregrasp,qopen,qgrasp]),RobotTrajectory(self.robot,milestones=[qgrasp,qlift]))
 
+    def plan_pick_grasps(self,obj):
+        c = 0
+        qstart = self.robot.getConfig()
+        name = obj.getName().split('_')[0]
+        grasps = self.get_object_grasps(name, obj.getTransform())
+        for grasp in grasps:
+            res = plan_pick_one(world, robot, object, gripper, grasp)
+            if (res != None):
+                (transit,approach,lift) = res
+                return (transit,approach,lift)
+            robot.setConfig(qstart)
+            print(c)
+            c += 1
+        return None

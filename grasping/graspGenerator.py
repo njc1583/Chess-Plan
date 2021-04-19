@@ -59,11 +59,14 @@ if __name__ == '__main__':
         grasps = antipodal_grasp_sample_volume(gripper,piece,20)
         t1 = time.time()
         print("Sampled grasps in",t1-t0,"s, min scoring grasp",grasps[0][1], "numgrasps:", len(grasps))
+        maxScore = 0
         for i,(g,s) in enumerate(grasps):
             db.add_grasp(piece, g.genGrasp(robot))
+            maxScore = max(maxScore,g.finger_width)
             # name = "grasp{}".format(i)
             # u = math.exp(-(s-grasps[0][1])*2)
             # g.add_to_vis(name) 
+        print("Piece:",piece.getName(), "maxScore:", maxScore)
         vis.add(piece.getName(),piece)
         vis.run()
     db.save("chess_grasps.json")

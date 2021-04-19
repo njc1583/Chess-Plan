@@ -48,7 +48,7 @@ if __name__ == '__main__':
         m = obj.getMass()
         m.estimate(obj.geometry(),mass=0.454,surfaceFraction=0.2)
         obj.setMass(m)
-
+    
     robot = world.robot(0)
     #need to fix the spin joints somewhat
     qmin,qmax = robot.getJointLimits()
@@ -73,8 +73,8 @@ if __name__ == '__main__':
     def planTriggered():
         global world,robot
         robot.setConfig(qstart)
-        square = "H8"
-        path = motion.plan_to_square(square)
+        square = "E1"
+        path = motion.plan_to_piece(square)
         if path is None:
             print("Unable to plan pick")
         else:
@@ -84,8 +84,8 @@ if __name__ == '__main__':
             traj = traj.concat(lift,relative=True,jumpPolicy='jump')
             vis.add("traj",traj,endEffectors=[9])
             vis.animate(vis.getItemName(robot),traj)
-        tTarget = motion.get_square_transform(square)
-        vis.add("targetTransform", tTarget)
+        # tTarget = motion.get_square_transform(square)
+        # vis.add("targetTransform", tTarget)
     vis.addAction(planTriggered,"Plan to target",'p')
 
     vis.run()
