@@ -168,9 +168,11 @@ def antipodal_grasp_sample_volume(gripper,rigid_object,k):
     print(bmin,bmax)
     grasps = []
     object_normals = normals.get_object_normals(rigid_object)
-    for i in np.linspace(bmin[2], bmax[2], num=50): # iterate through all obj z values
+    mid = (bmax[2] + bmin[2])/2
+    high = bmax[2]
+    for i in np.linspace(mid, high, num=50): # iterate through all obj z values
         center = [0,0,i]
-        for j in range(10):
+        for j in range(20):
             axis = [np.random.uniform(low=-2*np.pi, high=2*np.pi),np.random.uniform(low=-2*np.pi, high=2*np.pi),0]
             axis = vectorops.unit(axis)
             grasp = AntipodalGrasp(center, axis, gripper)
