@@ -42,7 +42,7 @@ class ChessMotion:
     def plan_to_square(self, square):#world,robot,object,gripper,grasp):
         tile = self.board[square]['tile']
         print("TILE:",tile.getTransform())
-        return self.plan_pick_one(self.get_square_transform(square))
+        return self.plan_pick_grasps(self.get_square_transform(square))
     # def get_square_transform(self, square):
         
     #     # R_flip_y = so3.rotation([1,0,0],math.pi)
@@ -51,7 +51,7 @@ class ChessMotion:
     #     # return (R,t)
     def plan_to_piece(self,square):
         piece = self.board[square]['piece']
-        return self.plan_pick_one(piece[1])
+        return self.plan_pick_grasps(piece[1])
     def go_to_square(self,square):
         return self.solve_robot_ik(self.get_square_transform(square))
     def check_collision(self):
@@ -87,9 +87,7 @@ class ChessMotion:
         return grasps
     def plan_pick_one(self,obj, grasp):#world,robot,object,gripper,grasp):
         qstart = self.robot.getConfig()
-
         grasp.ik_constraint.robot = self.robot  #this makes it more convenient to use the ik module
-
         # qgrasp = qstart
         solution = ik.solve_global(grasp.ik_constraint, iters=100, numRestarts = 10, feasibilityCheck=self.check_collision)
         if not solution:
@@ -103,6 +101,7 @@ class ChessMotion:
         qpregrasp = retract(self.robot, self.gripper, vectorops.mul(self.gripper.primary_axis,-1*distance), local=True)   #TODO solve the retraction problem for qpregrasp?
         qstartopen = self.gripper.set_finger_config(qstart,self.gripper.partway_open_config(1))  #open the fingers of the start to match qpregrasp
         self.robot.setConfig(qstartopen)
+        print(qpregrasp)
         if qpregrasp is None:
             print("pregrasp failed")
             return None
@@ -128,11 +127,11 @@ class ChessMotion:
         name = obj.getName().split('_')[0]
         grasps = self.get_object_grasps(name, obj.getTransform())
         for grasp in grasps:
-            res = plan_pick_one(world, robot, object, gripper, grasp)
+            print("GraspNum", c)
+            res = self.plan_pick_one(object,grasp)
             if (res != None):
                 (transit,approach,lift) = res
                 return (transit,approach,lift)
-            robot.setConfig(qstart)
-            print(c)
+            self.robot.setConfig(qstart)
             c += 1
         return None
