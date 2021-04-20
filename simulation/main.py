@@ -59,6 +59,11 @@ if __name__ == '__main__':
     chessEngine.loadPieces()
     chessEngine.loadBoard()
 
+    chessEngine.loadPieces()
+    chessEngine.loadBoard()
+
+    c = input('Waiting to continue...')
+
     chessEngine.arrangeBoard(0)
     chessEngine.arrangePieces()
 

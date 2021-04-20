@@ -34,8 +34,8 @@ class ChessEngine:
         self.world = world
         self.tabletop = tabletop
 
-        self.boardTiles = {}
-        self.pieces = {} 
+        self.boardTiles = None
+        self.pieces = None
 
         self.WHITE = (253/255, 217/255, 168/255, 1)
         # self.BLACK = (45/255, 28/255, 12/255, 1)
@@ -264,6 +264,12 @@ class ChessEngine:
         """ Loads default configuration for pieces; loads tiles from
         object files; populates self.boardTiles
         """
+        if self.boardTiles is not None:
+            print('The board has already been loaded; subsequent calls to this function are redundant')
+            return
+
+        self.boardTiles = {}
+
         default_file = open('../engines/default_board.conf')
 
         default_pieces = {}
@@ -357,6 +363,12 @@ class ChessEngine:
 
     def loadPieces(self):
         """ Loads pieces from object files, and populates self.pieces """
+        if self.pieces is not None:
+            print('Pieces have already been loaded; subsequent calls to this function are redundant')
+            return 
+
+        self.pieces = {}
+        
         pieces = [] 
         
         pieces.extend(self.loadObjects('Rook', self.WHITE, 'w', 2, PIECE_SCALE, True))
