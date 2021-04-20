@@ -37,6 +37,7 @@ class ChessMotion:
         self.gripper = robotiq_85_kinova_gen3
         self.board = board
         self.currentObject = None
+        self.Tobject_gripper = None
         self.db = grasp_database.GraspDatabase(self.gripper)
         if not self.db.load("../grasping/chess_grasps.json"):
             raise RuntimeError("Can't load grasp database?")
@@ -49,7 +50,7 @@ class ChessMotion:
         """
         tile = self.board[square]['tile']
         R,t = tile.getTransform()
-        t = vectorops.add(t, [TILE_SCALE[0]/2,TILE_SCALE[0]/2,2*TILE_SCALE[2]])# place right above tile to avoid collision
+        t = vectorops.add(t, [TILE_SCALE[0]/2,TILE_SCALE[0]/2,1.1*TILE_SCALE[2]])# place right above tile to avoid collision
         return (R,t)
     def get_object_grasps(self, name, T_obj):
         """ Returns a list of transformed grasp objects from the db for the given object name and transform 
@@ -73,10 +74,11 @@ class ChessMotion:
         print(self.currentObject.getName())
         Tobj = self.currentObject.getTransform()
         link = self.robot.link(self.gripper.base_link)
-        Tobject_gripper = se3.mul(se3.inv(link.getTransform()),Tobj)
+        self.Tobject_gripper = se3.mul(se3.inv(link.getTransform()),Tobj)
         T_target = self.get_target_transform(square)
         print(T_target)
-        path = plan_place_target(self.world, self.robot,self.currentObject,Tobject_gripper,self.gripper,T_target)
+        path = plan_place_target(self.world, self.robot,self.currentObject,self.Tobject_gripper,self.gripper,T_target)
+        self.currentObject.setTransform(*Tobj)
         return path
     def check_collision(self):
         return is_collision_free_grasp(self.world, self.robot, self.currentObject)

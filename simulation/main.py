@@ -26,19 +26,9 @@ PHYSICS_SIMULATION = False  #not implemented correctly yet
 if __name__ == '__main__':
     #load the robot / world file
     # fn = "./main.xml"
-    fn = "./worlds/default.xml"
+    fn = "./main.xml"
     world = WorldModel()
     res = world.readFile(fn)
-    if not res:
-        fn = "./main.xml"
-        world = WorldModel()
-        res = world.readFile(fn)
-        chessEngine = ChessEngine(world, world.terrain('tabletop'))
-        chessEngine.loadPieces()
-        chessEngine.loadBoard()
-        chessEngine.arrangeBoard()
-        chessEngine.arrangePieces()
-        print(chessEngine.pieces)
     if not res:
         print("Unable to read file",fn)
         exit(0)
@@ -49,7 +39,6 @@ if __name__ == '__main__':
         m = obj.getMass()
         m.estimate(obj.geometry(),mass=0.454,surfaceFraction=0.2)
         obj.setMass(m)
-    
     robot = world.robot(0)
     #need to fix the spin joints somewhat
     qmin,qmax = robot.getJointLimits()
@@ -73,17 +62,24 @@ if __name__ == '__main__':
     solved_trajectory = None
     trajectory_is_transfer = None
     def planTriggered():
-        global world,robot
+        global world, robot, motion, solved_trajectory, trajectory_is_transfer
         robot.setConfig(qstart)
         square = 'A1'#input("Square:")
         path = motion.plan_to_piece(square)
         if path is None:
             print("Unable to plan pick")
         else:
+            trajectory_is_transfer = Trajectory()
+            trajectory_is_transfer.times.append(0)
+            trajectory_is_transfer.milestones.append([0])
+
             (transit,approach) = path
             traj = transit
             traj = traj.concat(approach,relative=True,jumpPolicy='jump')
-
+            trajectory_is_transfer.times.append(traj.endTime())
+            trajectory_is_transfer.times.append(traj.endTime())
+            trajectory_is_transfer.milestones.append([0])
+            trajectory_is_transfer.milestones.append([1])
             robot.setConfig(approach.milestones[-1])
             target_square = 'A4' #input("Target Square:")
             tTarget = motion.get_target_transform(target_square)
@@ -96,11 +92,47 @@ if __name__ == '__main__':
                 (transfer,lower,retract) = res
                 traj = traj.concat(transfer,relative=True,jumpPolicy='jump')
                 traj = traj.concat(lower,relative=True,jumpPolicy='jump')
+                trajectory_is_transfer.times.append(traj.endTime())
+                trajectory_is_transfer.times.append(traj.endTime())
+                trajectory_is_transfer.milestones.append([1])
+                trajectory_is_transfer.milestones.append([0])
                 traj = traj.concat(retract,relative=True,jumpPolicy='jump')
+                trajectory_is_transfer.times.append(traj.endTime())
+                trajectory_is_transfer.milestones.append([0])
                 solved_trajectory = traj
             vis.add("traj",traj,endEffectors=[9])
-            vis.animate(vis.getItemName(robot),traj)
-        
+            robot.setConfig(qstart)
+
+            # vis.animate(vis.getItemName(robot),traj)
     vis.addAction(planTriggered,"Plan to target",'p')
 
-    vis.run()
+    executing_plan = False
+    execute_start_time = None
+    def executePlan():
+        global solved_trajectory,trajectory_is_transfer,executing_plan,execute_start_time
+        if solved_trajectory is None:
+            return
+        executing_plan = True
+        execute_start_time = time.time()
+
+    vis.addAction(executePlan,"Execute plan",'e')
+
+    was_grasping = False
+    print("Num objs orig:",world.numRigidObjects())
+    def loop_callback():
+        global was_grasping,solved_trajectory,trajectory_is_transfer,executing_plan,execute_start_time,qstart
+        if not executing_plan:
+            return
+        t = time.time()-execute_start_time
+        vis.addText("time","Time %.3f"%(t),position=(10,10))
+        qstart = solved_trajectory.eval(t)
+        robot.setConfig(qstart)
+        during_transfer = trajectory_is_transfer.eval(t)[0]
+        if during_transfer:
+            print("Num objs:",world.numRigidObjects())
+            motion.currentObject.setTransform(*se3.mul(robot.link(9).getTransform(),motion.Tobject_gripper))
+        if t > solved_trajectory.duration():
+            executing_plan = False
+            solved_trajectory = None
+
+    vis.loop(callback=loop_callback)
