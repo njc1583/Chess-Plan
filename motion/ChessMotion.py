@@ -42,24 +42,32 @@ class ChessMotion:
         tile = self.board[square]['tile']
         print("TILE:",tile.getTransform())
         return self.plan_pick_grasps(self.get_square_transform(square))
-    # def get_square_transform(self, square):
-        
-    #     # R_flip_y = so3.rotation([1,0,0],math.pi)
-    #     # R = so3.mul(R_flip_y,R) # makes gripper face downward
-    #     # t = vectorops.add(t, [0,0,0.2])# add 20 cm in z to avoid collision
-    #     # return (R,t)
+    def get_square_transform(self, square):
+        tile = self.board[square]['tile']
+        R,t = tile.getTransform()
+        Tobj = obj.getTransform()
+        Tobject_grasp = se3.mul(se3.inv(gripper_link.getTransform()),Tobj)
+        R_flip_y = so3.rotation([1,0,0],math.pi)
+        R = so3.mul(R_flip_y,R) # makes gripper face downward
+        t = vectorops.add(t, [0,0,0.2])# add 20 cm in z to avoid collision
+        return (R,t)
+    def get_object_grasps(self, name, T_obj):
+        orig_grasps = self.db.object_to_grasps[name]
+        grasps = [grasp.get_transformed(T_obj) for grasp in orig_grasps]
+        return grasps
     def plan_to_piece(self,square):
         piece = self.board[square]['piece'][1]
         self.currentObject = piece
+        print(piece)
         name = piece.getName().split('_')[0]
         grasps = self.get_object_grasps(name, piece.getTransform())
         path = plan_pick_multistep(self.world,self.robot,self.currentObject,self.gripper,grasps)
         return path
-
+    def plan_to_place(self,square):
+        
     def go_to_square(self,square):
         return self.solve_robot_ik(self.get_square_transform(square))
-    def check_collision(self):
-        return is_collision_free_grasp(self.world, self.robot, self.currentObject)
+
     def solve_robot_ik(self,Tgripper):
         """Given a robot, a gripper, and a desired gripper transform,
         solve the IK problem to place the gripper at the desired transform.
@@ -85,72 +93,3 @@ class ChessMotion:
                 return self.robot.getConfig()
             else:
                 return None
-    def get_object_grasps(self, name, T_obj):
-        orig_grasps = self.db.object_to_grasps[name]
-        grasps = [grasp.get_transformed(T_obj) for grasp in orig_grasps]
-        return grasps
-    def plan_pick_one(self,obj, grasp):#world,robot,object,gripper,grasp):
-        qstart = self.robot.getConfig()
-        grasp.ik_constraint.robot = self.robot  #this makes it more convenient to use the ik module
-        # qgrasp = qstart
-        solution = ik.solve_global(grasp.ik_constraint, iters=100, numRestarts = 10, feasibilityCheck=self.check_collision)
-        if not solution:
-            self.robot.setConfig(qstart)
-            print("Solution Failed")
-            return None
-        qgrasp = self.robot.getConfig()
-        qgrasp = grasp.set_finger_config(qgrasp)  #open the fingers the right amount
-        qopen = self.gripper.set_finger_config(qgrasp,self.gripper.partway_open_config(grasp.score + 0.1))   #open the fingers further
-        distance = 0.1
-        qpregrasp = retract(self.robot, self.gripper, vectorops.mul(self.gripper.primary_axis,-1*distance), local=True)   #TODO solve the retraction problem for qpregrasp?
-        qstartopen = self.gripper.set_finger_config(qstart,self.gripper.partway_open_config(1))  #open the fingers of the start to match qpregrasp
-        self.robot.setConfig(qstartopen)
-        print(qpregrasp)
-        if qpregrasp is None:
-            print("pregrasp failed")
-            return None
-        transit = feasible_plan(self.world,self.robot,qpregrasp)   #decide whether to use feasible_plan or optimizing_plan
-        if not transit:
-            print("transit failed")
-            return None
-        # Collision Checking
-        for i in transit: #transit should be a list of configurations
-            self.robot.setConfig(i)
-            if not self.check_collision():
-                return None
-
-        self.robot.setConfig(qgrasp)
-        qlift = retract(self.robot, self.gripper, vectorops.mul([0,0,1],distance), local=False) # move up a distance
-        self.robot.setConfig(qstart)
-        
-        return (RobotTrajectory(self.robot,milestones=[qstart]+transit),RobotTrajectory(self.robot,milestones=[qpregrasp,qopen,qgrasp]),RobotTrajectory(self.robot,milestones=[qgrasp,qlift]))
-    def plan_pick_grasps(self,obj):
-        c = 0
-        qstart = self.robot.getConfig()
-        name = obj.getName().split('_')[0]
-        grasps = self.get_object_grasps(name, obj.getTransform())
-        for grasp in grasps:
-            print("GraspNum", c)
-            res = self.plan_pick_one(object,grasp)
-            if (res != None):
-                (transit,approach,lift) = res
-                return (transit,approach,lift)
-            self.robot.setConfig(qstart)
-            c += 1
-        return None
-    def object_free(self,q):
-        """Helper: returns true if the object is collision free at configuration q, if it is
-        attached to the gripper."""
-        self.robot.setConfig(q)
-        gripper_link = self.robot.link(self.gripper.base_link)
-        self.object.setTransform(*se3.mul(gripper_link.getTransform(),self.Tobject_gripper))
-        for i in range(self.world.numTerrains()):
-            if self.object.geometry().collides(self.world.terrain(i).geometry()):
-                return False
-        for i in range(self.world.numRigidObjects()):
-            if i == self.object.index: continue
-            if self.object.geometry().collides(self.world.rigidObject(i).geometry()):
-                return False
-        return True
-    
-    

@@ -73,7 +73,7 @@ if __name__ == '__main__':
     def planTriggered():
         global world,robot
         robot.setConfig(qstart)
-        square = "G8"
+        square = input("Square:")
         path = motion.plan_to_piece(square)
         if path is None:
             print("Unable to plan pick")
