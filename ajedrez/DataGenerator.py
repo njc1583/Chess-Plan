@@ -42,18 +42,18 @@ class DataGenerator:
         self.chessEngine.arrangePieces()
 
         self._imageDir = 'image_dataset'
-        self._originalDir = 'image_dataset/original'
-        self._rectifiedDir = 'image_dataset/rectified'
+
+        self._colorDir = self._imageDir + '/color'
+        self._depthDir = self._imageDir + '/depth'
+        self._rectifiedDir = self._imageDir + '/rectified'
 
         self._metaDataFN = self._imageDir + '/metadata.csv'
 
-        self._dirs = [self._imageDir, self._originalDir, self._rectifiedDir]
+        self._dirs = [self._imageDir, self._colorDir, self._depthDir, self._rectifiedDir]
 
-        self._origColorFNFormat = self._originalDir + '/color%06d.png'
-        self._origDepthFNFormat = self._originalDir + '/depth%06d.png'
-
-        self._rectColorFNFormat = self._rectifiedDir + '/color%06d.png'
-        self._rectDepthFNFormat = self._rectifiedDir + '/depth%06d.png'
+        self._colorFNFormat = self._colorDir + '/%06d_%02d.png'
+        self._depthFNFormat = self._depthDir + '/%06d_%02d.png'
+        self._rectifiedFNFormat = self._rectifiedDir + '/%06d.png'
 
         self._rectifiedPictureCorners = np.float32([
             [DataUtils.IMAGE_SIZE,0],
@@ -153,14 +153,21 @@ class DataGenerator:
         """
         return self._randomlyRotateCamera(r, r, dist)
 
-    def generateImages(self, max_pics=100, save_original=False):
+    def generateImages(self, max_pics=100, data_distribution=None):
+        assert max_pics > 0
+        
+        if data_distribution is None:
+            data_distribution = DataUtils.LIMITED_DISTRIBUTION
+        
+        assert len(data_distribution) == 13
+
         self._createDatasetDirectory()
 
         for i in range(self.world.numRigidObjects()):
             self.world.rigidObject(i).appearance().setSilhouette(0)
 
         metadata_f = open(self._metaDataFN, mode='w+')
-        metadata_f.write('color,depth,pieces\n')
+        metadata_f.write('color,depth,piece\n')
 
         DEPTH_SCALE = 8000
 
@@ -183,19 +190,27 @@ class DataGenerator:
                 local_corner_coords = np.float32([sensing.camera_project(self.sensor, self.robot, pt)[:2] for pt in self._boardWorldCorners])
 
                 H = cv2.getPerspectiveTransform(local_corner_coords, self._rectifiedPictureCorners)
+
                 color_rectified = cv2.warpPerspective(rgb, H, (DataUtils.IMAGE_SIZE, DataUtils.IMAGE_SIZE))
                 depth_rectified = cv2.warpPerspective(depth, H, (DataUtils.IMAGE_SIZE, DataUtils.IMAGE_SIZE))
 
-                # Save images and write metadata
-                if save_original:
-                    Image.fromarray(rgb).save(self._origColorFNFormat % counter)
-                    Image.fromarray(np.uint32(DEPTH_SCALE * depth)).save(self._origDepthFNFormat % counter)
-
-                Image.fromarray(color_rectified).save(self._rectColorFNFormat % counter)
-                Image.fromarray(np.uint32(DEPTH_SCALE * depth_rectified)).save(self._rectDepthFNFormat % counter)
+                depth_rectified = np.uint8((depth_rectified - depth_rectified.min()) / (depth_rectified.max() - depth_rectified.min()))
 
                 pieces_arrangement = self.chessEngine.getPieceArrangement()
-                metadata_f.write(f'{self._rectColorFNFormat % counter},{self._rectDepthFNFormat % counter},{pieces_arrangement}\n')
+
+                images, classes = DataUtils.split_image_by_classes(color_rectified, depth_rectified, data_distribution, pieces_arrangement)
+
+                rectified_fname = self._rectifiedFNFormat % (counter)
+                Image.fromarray(color_rectified).save(rectified_fname)
+
+                for idx in range(sum(data_distribution)):
+                    color_fname = self._colorFNFormat % (counter, idx)
+                    depth_fname = self._depthFNFormat % (counter, idx)
+
+                    Image.fromarray(images[idx,:,:,:3]).save(color_fname)
+                    Image.fromarray(images[idx,:,:,3]).save(depth_fname)
+
+                    metadata_f.write(f'{color_fname},{depth_fname},{classes[idx]}\n')
 
             vis.show(False)
 
@@ -207,7 +222,6 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--num_images', '-n', help='number of generated images', default=100, type=int)
-    parser.add_argument('--save_original', '-so', action='store_true', help='store original images as well')
     parser.add_argument('--delete_dataset', '-dd', action='store_true', help='delete dataset before processing images')
 
     args = parser.parse_args()
@@ -221,4 +235,4 @@ if __name__ == "__main__":
     if args.delete_dataset:
         data_generator.deleteDataset()
 
-    data_generator.generateImages(args.num_images, args.save_original)
+    data_generator.generateImages(args.num_images, DataUtils.LIMITED_DISTRIBUTION)

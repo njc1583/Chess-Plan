@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from torch import nn
 from torch import optim
@@ -14,8 +13,11 @@ from tqdm.notebook import tqdm
 from torchvision import transforms, utils
 from torch.utils.data import Dataset, DataLoader, random_split 
 
+import DataUtils
+
 from DataProcessor import AjedrezDataset
 
+import torchvision.models
 from torchvision.models import resnet
 
 NUM_CLASSES = 13
@@ -26,47 +28,47 @@ class Ajedrez(nn.Module):
 
         self.input_channels = input_channels
 
-        self.seq = nn.Sequential(
-            nn.Conv2d(input_channels, 8, 3, 1, 1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            resnet.BasicBlock(8, 8),
-            nn.MaxPool2d(2),
-            nn.Conv2d(8, 16, 3, 1, 1),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            resnet.BasicBlock(16, 16),
-            nn.MaxPool2d(2),
-            nn.Flatten(),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Linear(256, 128),
-            nn.ReLU(),
-            nn.Linear(128, 13),
-            nn.ReLU()
-        )
+        self.pre_model = torchvision.models.resnet152(pretrained=True)
 
-        self._weight_init()
+        for param in self.pre_model.parameters():
+            param.requires_grad = False
+
+        self.num_ftrs = self.pre_model.fc.in_features
+        self.pre_model.fc = nn.Linear(self.num_ftrs, 13)
 
     def forward(self, x):
-        out = self.seq(x)
+        out = self.pre_model(x)
         
         return out
-
-    def _weight_init(self):
-        for child in self.seq.children():
-            if isinstance(child, nn.Conv2d):
-                for name, param in child.named_parameters():
-                    if name in ['bias']:
-                        nn.init.zeros_(param)
-                    else:
-                        nn.init.xavier_normal_(param, nn.init.calculate_gain('relu'))
 
 def get_loss(criterion, pred, act):
     # BCE on which piece was selected
     piece_bce = criterion(pred, act) 
 
     return piece_bce
+
+def get_aj_loss(criterions, alphas, pred, act):
+    assert len(criterions) == len(alphas) == len(pred) == 3
+
+    nonempty_class = act != 0
+
+    nonempty_actual = torch.zeros_like(act)
+    nonempty_actual[nonempty_class] = 1
+
+    white_class = (act >= 1) & (act <= 6)
+
+    color_act = torch.zeros_like(act)
+    color_act[white_class] = 1 
+    color_act = color_act[nonempty_class]
+
+    color_pred = pred[2][nonempty_class]
+
+    class_loss = alphas[0] * criterions[0](pred[0], act)
+    nonempty_loss = alphas[1] * criterions[1](pred[1], nonempty_actual)
+    color_loss = alphas[2] * criterions[2](color_pred, color_act)
+
+    return class_loss + nonempty_loss + color_loss
+
 
 def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_epochs=10):
     criterion = nn.CrossEntropyLoss()
@@ -133,18 +135,42 @@ if __name__ == "__main__":
     ts = transforms.Compose([
         transforms.ToTensor()])
 
-    dset = AjedrezDataset('./image_dataset/metadata.csv', './.', ts, 10)
-
-    train_data, test_data = random_split(dset, [8, 2])
-
-    train_loader = DataLoader(train_data, batch_size=8, shuffle=True, num_workers=0)
-    test_loader = DataLoader(test_data, batch_size=2, shuffle=False, num_workers=0)
+    dset = AjedrezDataset('./image_dataset/metadata.csv',
+        dataset_size=10,
+        use_depth=False,
+        color_transform=ts, depth_transform=ts,
+        full_image=False, 
+        class_distribution=DataUtils.UNIFORM_DISTRIBUTION
+    )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    AJ = Ajedrez().to(device)
+    AJ = Ajedrez(3).to(device)
 
-    sgd = optim.SGD(AJ.parameters(), lr=0.01, momentum=0.9)
-    scheduler = optim.lr_scheduler.StepLR(sgd, step_size=1, gamma=0.1)
+    data, classes = dset[0]
+    data, classes = data.to(device), classes.to(device)
 
-    train(AJ, train_loader, test_loader, sgd, scheduler, device, 10)
+    out = AJ.forward(data)
+
+    criterion = nn.CrossEntropyLoss()
+
+    loss = get_loss(criterion, out, classes)
+
+    print(loss.item())
+
+    # (class_out, empty_out, color_out) = out = AJ.forward(data)
+
+    # print(class_out.shape)
+    # print(empty_out.shape)
+    # print(color_out.shape)
+
+    # class_criterion = nn.CrossEntropyLoss()
+    # empty_criterion = nn.CrossEntropyLoss()
+    # color_criterion = nn.CrossEntropyLoss()
+
+    # criterions = (class_criterion, empty_criterion, color_criterion)
+    # alphas = (0.8, 0.1, 0.1)
+
+    # loss = get_aj_loss(criterions, alphas, out, classes)
+
+    # print(loss.cpu().item())    

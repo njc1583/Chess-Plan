@@ -19,6 +19,12 @@ TILE_DIRECTORY = '../data/objects/cube.off'
 PIECE_SCALE = 0.05
 TILE_SCALE = (0.05, 0.05, 0.005)
 
+# WHITE_TILE = (0,0,0,1)
+# BLACK_TILE = (1,1,1,1)
+WHITE_TILE = (235/255, 235/255, 235/255, 1)
+# BLACK_TILE = (125/255, 125/255, 125/255, 1)
+BLACK_TILE = (36/255, 64/255, 51/255, 1)
+
 TILE = 'tile'
 PIECE = 'piece'
 DEFAULT = 'default'
@@ -34,7 +40,8 @@ class ChessEngine:
         self.WHITE = (253/255, 217/255, 168/255, 1)
         # self.BLACK = (45/255, 28/255, 12/255, 1)
         # self.BLACK = (110/255, 80/255, 16/255, 1)
-        self.BLACK = (79/255, 56/255, 6/255, 1)
+        # self.BLACK = (79/255, 56/255, 6/255, 1)
+        self.BLACK = (40/255, 40/255, 40/255, 1)
 
         self.board_rotation = 0
 
@@ -268,8 +275,8 @@ class ChessEngine:
 
         default_file.close()
 
-        white_tiles = self.loadObjects('Square', (1,1,1,1), 'w', 32, TILE_SCALE, False, TILE_DIRECTORY)
-        black_tiles = self.loadObjects('Square', (0,0,0,1), 'b', 32, TILE_SCALE, False, TILE_DIRECTORY)
+        white_tiles = self.loadObjects('Square', WHITE_TILE, 'w', 32, TILE_SCALE, False, TILE_DIRECTORY)
+        black_tiles = self.loadObjects('Square', BLACK_TILE, 'b', 32, TILE_SCALE, False, TILE_DIRECTORY)
 
         white_idx = 0
         black_idx = 0
@@ -343,9 +350,10 @@ class ChessEngine:
         for rank_name in chess.RANK_NAMES[::-1]:                 
             for file_name in chess.FILE_NAMES:
                 tilename = file_name + rank_name
-                arrangement.append(str(self._getPieceNumberAtTile(tilename)))
+                # arrangement.append(str(self._getPieceNumberAtTile(tilename)))
+                arrangement.append(self._getPieceNumberAtTile(tilename))
 
-        return ';'.join(arrangement)
+        return arrangement
 
     def loadPieces(self):
         """ Loads pieces from object files, and populates self.pieces """

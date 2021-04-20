@@ -103,8 +103,15 @@ class AjedrezDataset(Dataset):
 
 # A simple test
 if __name__ == '__main__':
-    color_transforms = transforms.Compose([transforms.ToTensor()])
-    depth_transforms = transforms.Compose([transforms.ToTensor()])
+    color_transforms = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225])
+    ])
+    depth_transforms = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=0, std=1)
+    ])
 
     print(f'Full Image Dataset')
 
@@ -141,6 +148,20 @@ if __name__ == '__main__':
         depth_transform=depth_transforms,
         full_image=False,
         class_distribution=DataUtils.LIMITED_DISTRIBUTION
+    )
+
+    im, c = dset_modified[0] 
+
+    print(im.shape, c)
+
+    print(f'Just Pawns')
+
+    dset_modified = AjedrezDataset('./image_dataset/metadata.csv', './.', 
+        use_depth=True, 
+        color_transform=color_transforms, 
+        depth_transform=depth_transforms,
+        full_image=False,
+        class_distribution=DataUtils.JUST_PAWNS
     )
 
     im, c = dset_modified[0] 
