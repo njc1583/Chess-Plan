@@ -1,9 +1,0 @@
-mesh cube_84/cube.off
-T 1 0 0 0 1 0 0 0 1 0.575 0.025 0.6375
-mass 1
-com 0.5 0.5 0.5
-inertia 0.277778 -0 -0 -0 0.277778 -0 -0 -0 0.277778
-kFriction 0.5
-kRestitution 0.5
-kStiffness inf
-kDamping inf
