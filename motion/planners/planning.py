@@ -6,7 +6,7 @@ from klampt import RobotModel
 import math
 import time
 import sys
-sys.path.append("../motion")
+sys.path.append("../motion/planners")
 from motionGlobals import *
 
 def feasible_plan(world,robot,qtarget):

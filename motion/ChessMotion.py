@@ -10,10 +10,9 @@ import math
 import time
 import sys
 sys.path.append('../common')
-sys.path.append("../motion")
 from known_grippers import robotiq_85_kinova_gen3
-from motionHelpers import *
-from planning import *
+sys.path.append("../motion/planners")
+from pickPlanner import *
 from motionGlobals import *
 import grasp_database
 
@@ -50,8 +49,13 @@ class ChessMotion:
     #     # t = vectorops.add(t, [0,0,0.2])# add 20 cm in z to avoid collision
     #     # return (R,t)
     def plan_to_piece(self,square):
-        piece = self.board[square]['piece']
-        return self.plan_pick_grasps(piece[1])
+        piece = self.board[square]['piece'][1]
+        self.currentObject = piece
+        name = piece.getName().split('_')[0]
+        grasps = self.get_object_grasps(name, piece.getTransform())
+        path = plan_pick_multistep(self.world,self.robot,self.currentObject,self.gripper,grasps)
+        return path
+
     def go_to_square(self,square):
         return self.solve_robot_ik(self.get_square_transform(square))
     def check_collision(self):
@@ -120,7 +124,6 @@ class ChessMotion:
         self.robot.setConfig(qstart)
         
         return (RobotTrajectory(self.robot,milestones=[qstart]+transit),RobotTrajectory(self.robot,milestones=[qpregrasp,qopen,qgrasp]),RobotTrajectory(self.robot,milestones=[qgrasp,qlift]))
-
     def plan_pick_grasps(self,obj):
         c = 0
         qstart = self.robot.getConfig()
@@ -135,3 +138,19 @@ class ChessMotion:
             self.robot.setConfig(qstart)
             c += 1
         return None
+    def object_free(self,q):
+        """Helper: returns true if the object is collision free at configuration q, if it is
+        attached to the gripper."""
+        self.robot.setConfig(q)
+        gripper_link = self.robot.link(self.gripper.base_link)
+        self.object.setTransform(*se3.mul(gripper_link.getTransform(),self.Tobject_gripper))
+        for i in range(self.world.numTerrains()):
+            if self.object.geometry().collides(self.world.terrain(i).geometry()):
+                return False
+        for i in range(self.world.numRigidObjects()):
+            if i == self.object.index: continue
+            if self.object.geometry().collides(self.world.rigidObject(i).geometry()):
+                return False
+        return True
+    
+    

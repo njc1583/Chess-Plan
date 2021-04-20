@@ -1,4 +1,21 @@
-
+from klampt.plan import robotplanning
+from klampt.plan.cspace import MotionPlan
+from klampt.model import trajectory
+from klampt.model.trajectory import Trajectory,RobotTrajectory, execute_path,path_to_trajectory
+from klampt import vis 
+from klampt.model import ik
+from klampt.math import vectorops,so3,se3
+from klampt import RobotModel
+import math
+import time
+import sys
+sys.path.append('../common')
+from known_grippers import robotiq_85_kinova_gen3
+sys.path.append("../motion/planners")
+from multiStepPlanner import *
+from motionGlobals import *
+from motionHelpers import *
+from planning import *
 class PickPlanner(MultiStepPlanner):
     """For problem 2C
     """
@@ -26,9 +43,9 @@ class PickPlanner(MultiStepPlanner):
 
     def solve_approach(self,grasp,qgrasp):
         #TODO: solve for the approach
-        distance = 0.2
+        distance = 0.1
         qpregrasp = retract(self.robot, self.gripper, vectorops.mul(self.gripper.primary_axis,-1*distance), local=True)
-        qopen = self.gripper.set_finger_config(qgrasp,self.gripper.partway_open_config(1))   #open the fingers further
+        qopen = self.gripper.set_finger_config(qgrasp,self.gripper.partway_open_config(grasp.score + 0.1))   #open the fingers further
 
         return [qpregrasp,qopen,qgrasp]
 
@@ -51,7 +68,7 @@ class PickPlanner(MultiStepPlanner):
     def solve_lift(self,qgrasp):
         #TODO: solve for the lifting configurations
         self.robot.setConfig(qgrasp)
-        distance = 0.2
+        distance = 0.1
         qlift = retract(self.robot, self.gripper, vectorops.mul([0,0,1],distance), local=False) # move up a distance
         self.robot.setConfig(self.qstart)
         return qlift
