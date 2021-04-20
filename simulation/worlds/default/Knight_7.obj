@@ -1,0 +1,9 @@
+mesh Knight_7/Knight.off
+T 1 0 0 0 1 0 0 0 1 0 0 0
+mass 1
+com 0.00295963 -0.00811404 0.413324
+inertia 0.142461 9.82593e-11 -2.57314e-09 9.82593e-11 0.13712 0.00478326 -2.57314e-09 0.00478326 0.0546005
+kFriction 0.5
+kRestitution 0.5
+kStiffness inf
+kDamping inf

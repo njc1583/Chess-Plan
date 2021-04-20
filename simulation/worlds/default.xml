@@ -1,0 +1,620 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<world>
+  <display background="0.400000 0.400000 1.000000 0.000000" />
+  <robot name="Kinova" file="worlds/default/Kinova.rob" >
+    <display link="Base_Link" faceColor="0.752940 0.752940 0.752940 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.752940 0.752940 0.752940 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.752940 0.752940 0.752940 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.752940 0.752940 0.752940 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.752940 0.752940 0.752940 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.752940 0.752940 0.752940 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.752940 0.752940 0.752940 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.752940 0.752940 0.752940 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.500000 0.500000 0.500000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.500000 0.500000 0.500000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.500000 0.500000 0.500000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.500000 0.500000 0.500000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.500000 0.500000 0.500000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.500000 0.500000 0.500000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.500000 0.500000 0.500000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.500000 0.500000 0.500000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+    <display link="Base_Link" faceColor="0.500000 0.500000 0.500000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </robot>
+  <rigidObject name="Rook" file="worlds/default/Rook.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Rook" file="worlds/default/Rook_1.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Rook" file="worlds/default/Rook_2.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Rook" file="worlds/default/Rook_3.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Rook" file="worlds/default/Rook_4.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Rook" file="worlds/default/Rook_5.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Rook" file="worlds/default/Rook_6.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Rook" file="worlds/default/Rook_7.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Bishop" file="worlds/default/Bishop.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Bishop" file="worlds/default/Bishop_1.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Bishop" file="worlds/default/Bishop_2.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Bishop" file="worlds/default/Bishop_3.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Bishop" file="worlds/default/Bishop_4.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Bishop" file="worlds/default/Bishop_5.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Bishop" file="worlds/default/Bishop_6.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Bishop" file="worlds/default/Bishop_7.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Knight" file="worlds/default/Knight.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Knight" file="worlds/default/Knight_1.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Knight" file="worlds/default/Knight_2.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Knight" file="worlds/default/Knight_3.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Knight" file="worlds/default/Knight_4.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Knight" file="worlds/default/Knight_5.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Knight" file="worlds/default/Knight_6.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Knight" file="worlds/default/Knight_7.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="King" file="worlds/default/King.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="King" file="worlds/default/King_1.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="King" file="worlds/default/King_2.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="King" file="worlds/default/King_3.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Queen" file="worlds/default/Queen.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Queen" file="worlds/default/Queen_1.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Queen" file="worlds/default/Queen_2.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Queen" file="worlds/default/Queen_3.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_1.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_2.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_3.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_4.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_5.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_6.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_7.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_8.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_9.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_10.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_11.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_12.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_13.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_14.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_15.obj" >
+    <display faceColor="0.992157 0.850980 0.658824 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_16.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_17.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_18.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_19.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_20.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_21.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_22.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_23.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_24.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_25.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_26.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_27.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_28.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_29.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_30.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="Pawn" file="worlds/default/Pawn_31.obj" >
+    <display faceColor="0.176471 0.109804 0.047059 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_1.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_2.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_3.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_4.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_5.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_6.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_7.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_8.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_9.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_10.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_11.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_12.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_13.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_14.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_15.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_16.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_17.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_18.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_19.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_20.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_21.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_22.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_23.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_24.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_25.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_26.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_27.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_28.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_29.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_30.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_31.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_32.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_33.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_34.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_35.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_36.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_37.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_38.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_39.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_40.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_41.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_42.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_43.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_44.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_45.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_46.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_47.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_48.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_49.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_50.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_51.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_52.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_53.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_54.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_55.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_56.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_57.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_58.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_59.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_60.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_61.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_62.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_63.obj" >
+    <display faceColor="1.000000 1.000000 1.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_64.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_65.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_66.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_67.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_68.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_69.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_70.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_71.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_72.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_73.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_74.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_75.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_76.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_77.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_78.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_79.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_80.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_81.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_82.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_83.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_84.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_85.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_86.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_87.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_88.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_89.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_90.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_91.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_92.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_93.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_94.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_95.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_96.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_97.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_98.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_99.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_100.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_101.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_102.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_103.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_104.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_105.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_106.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_107.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_108.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_109.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_110.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_111.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_112.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_113.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_114.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_115.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_116.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_117.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_118.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_119.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_120.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_121.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_122.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_123.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_124.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_125.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_126.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <rigidObject name="cube" file="worlds/default/cube_127.obj" >
+    <display faceColor="0.000000 0.000000 0.000000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </rigidObject>
+  <terrain name="Terrain0" file="worlds/default/Terrain0.env" >
+    <display faceColor="0.200000 0.200000 0.200000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </terrain>
+  <terrain name="floor" file="worlds/default/floor.env" >
+    <display faceColor="0.800000 0.600000 0.200000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </terrain>
+  <terrain name="Terrain2" file="worlds/default/Terrain2.env" >
+    <display faceColor="0.400000 0.300000 0.200000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </terrain>
+  <terrain name="Terrain3" file="worlds/default/Terrain3.env" >
+    <display faceColor="0.400000 0.300000 0.200000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </terrain>
+  <terrain name="Terrain4" file="worlds/default/Terrain4.env" >
+    <display faceColor="0.400000 0.300000 0.200000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </terrain>
+  <terrain name="Terrain5" file="worlds/default/Terrain5.env" >
+    <display faceColor="0.400000 0.300000 0.200000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </terrain>
+  <terrain name="tabletop" file="worlds/default/tabletop.env" >
+    <display faceColor="0.400000 0.300000 0.200000 1.000000" silhouette="0.002500 0.000000 0.000000 0.000000 1.000000"/>
+  </terrain>
+</world>

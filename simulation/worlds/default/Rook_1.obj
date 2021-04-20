@@ -1,0 +1,9 @@
+mesh Rook_1/Rook.off
+T 1 0 0 0 1 0 0 0 1 0 0 0
+mass 1
+com -0.00637674 0.00198637 0.530927
+inertia 0.158036 2.81423e-05 -0.000117991 2.81423e-05 0.158105 3.11031e-05 -0.000117991 3.11031e-05 0.0631105
+kFriction 0.5
+kRestitution 0.5
+kStiffness inf
+kDamping inf
