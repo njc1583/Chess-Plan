@@ -15,30 +15,41 @@ from torch.utils.data import Dataset, DataLoader, random_split
 
 import DataUtils
 
-from DataProcessor import AjedrezDataset
+from SplitImageDataset import SplitImageDataset
 
 import torchvision.models
-from torchvision.models import resnet
 
 NUM_CLASSES = 13
 
 class Ajedrez(nn.Module):
-    def __init__(self, input_channels):
+    def __init__(self, input_channels, continue_training):
         super(Ajedrez, self).__init__()
 
         self.input_channels = input_channels
 
         self.pre_model = torchvision.models.resnet152(pretrained=True)
 
+        self.continue_training = continue_training
+
         for param in self.pre_model.parameters():
-            param.requires_grad = False
+            param.requires_grad = continue_training
 
         self.num_ftrs = self.pre_model.fc.in_features
         self.pre_model.fc = nn.Linear(self.num_ftrs, 13)
 
     def forward(self, x):
+        if len(x.shape) == 5:
+            B1, B2, C, H, W = x.shape
+
+            x = x.reshape(B1*B2, C, H, W)
+            x = x.reshape(B1*B2,)
+        elif len(x.shape) == 3:
+            C, H, W = x.shape
+
+            x = x.reshape(1, C, H, W)
+
         out = self.pre_model(x)
-        
+
         return out
 
 def get_loss(criterion, pred, act):
@@ -81,20 +92,12 @@ def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_ep
         for train_images,train_labels in tqdm(train_loader):
             optimizer.zero_grad()
 
-            if len(train_images.shape) == 5:
-                B1, B2, C, H, W = train_images.shape
-
-                train_images = train_images.reshape(B1*B2, C, H, W)
-                train_labels = train_labels.reshape(B1*B2,)
-
             train_images = train_images.to(device)
             train_labels = train_labels.to(device)
 
             preds = AJ.forward(train_images)
 
             loss = get_loss(criterion, preds, train_labels)
-
-            # print(f'Loss during epoch: {loss}')
 
             train_loss += loss.item()
 
@@ -110,12 +113,6 @@ def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_ep
             test_loss = 0.0
 
             for test_images,test_labels in tqdm(test_loader):
-                if len(test_images.shape) == 5:
-                    B1, B2, C, H, W = test_images.shape
-                
-                    test_images = test_images.reshape(B1*B2,C,H,W)
-                    test_labels = test_labels.reshape(B1*B2,)
-
                 test_images = test_images.to(device)
                 test_labels = test_labels.to(device)
 
@@ -132,15 +129,17 @@ def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_ep
         lr_scheduler.step()
 
 if __name__ == "__main__":
-    ts = transforms.Compose([
-        transforms.ToTensor()])
+    color_transforms = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                            std=[0.229, 0.224, 0.225])
+    ])
 
-    dset = AjedrezDataset('./image_dataset/metadata.csv',
+    dset = SplitImageDataset('./image_dataset/metadata.csv',
         dataset_size=10,
         use_depth=False,
-        color_transform=ts, depth_transform=ts,
-        full_image=False, 
-        class_distribution=DataUtils.UNIFORM_DISTRIBUTION
+        color_transform=color_transforms, depth_transform=None
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -148,7 +147,12 @@ if __name__ == "__main__":
     AJ = Ajedrez(3).to(device)
 
     data, classes = dset[0]
-    data, classes = data.to(device), classes.to(device)
+
+    data, classes = data.to(device), torch.tensor([classes]).to(device)
+
+    C, H, W = data.shape
+
+    data = data.reshape(1, C, H, W)
 
     out = AJ.forward(data)
 
@@ -157,20 +161,3 @@ if __name__ == "__main__":
     loss = get_loss(criterion, out, classes)
 
     print(loss.item())
-
-    # (class_out, empty_out, color_out) = out = AJ.forward(data)
-
-    # print(class_out.shape)
-    # print(empty_out.shape)
-    # print(color_out.shape)
-
-    # class_criterion = nn.CrossEntropyLoss()
-    # empty_criterion = nn.CrossEntropyLoss()
-    # color_criterion = nn.CrossEntropyLoss()
-
-    # criterions = (class_criterion, empty_criterion, color_criterion)
-    # alphas = (0.8, 0.1, 0.1)
-
-    # loss = get_aj_loss(criterions, alphas, out, classes)
-
-    # print(loss.cpu().item())    

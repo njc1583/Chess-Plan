@@ -1,5 +1,8 @@
 import torch
 import numpy as np
+from PIL import Image 
+
+from torchvision import transforms
 
 IMAGE_SIZE = 640
 
@@ -23,7 +26,11 @@ JUST_PAWNS = [
 
 UNIFORM_DISTRIBUTION = [1] * 13
 
-def split_image_by_classes_numpy(color_image, depth_image, class_distribution, classes):
+def split_image_by_classes(color_image, depth_image, class_distribution, classes):
+    assert len(class_distribution) == 13
+    assert len(classes) == 64
+    assert isinstance(color_image, np.ndarray)
+
     classes = np.array(classes)
 
     B = sum(class_distribution)
@@ -42,7 +49,7 @@ def split_image_by_classes_numpy(color_image, depth_image, class_distribution, c
 
         randomized_idx = np.random.choice(same_class_idx, size=num_sample_class, replace=False) 
 
-        classes_idx[num_classes:num_classes+num_sample_class] = randomized_idx # classes[randomized_idx] #same_class_idx[randomized_idx]
+        classes_idx[num_classes:num_classes+num_sample_class] = randomized_idx
 
         num_classes += num_sample_class
 
@@ -59,16 +66,20 @@ def split_image_by_classes_numpy(color_image, depth_image, class_distribution, c
     return (concat_images, classes[classes_idx.astype(np.uint8)])
 
 
-def split_image_by_classes_torch(color_image, class_distribution, classes):
-    return None
+def split_image_pytorch(color_image, transforms, imsize=224):
+    B = 64
+    H = IMAGE_SIZE // 10 
+    W = IMAGE_SIZE // 10
+    C = 3 
 
-def split_image_by_classes(color_image, depth_image, class_distribution, classes):
-    assert len(class_distribution) == 13
-    assert len(classes) == 64
+    concat_images = torch.zeros((B, C, imsize, imsize))
 
-    if isinstance(color_image, np.ndarray):
-        return split_image_by_classes_numpy(color_image, depth_image,class_distribution, classes)
-    elif isinstance(color_image, torch.Tensor):
-        return split_image_by_classes_torch(color_image, depth_image,class_distribution, classes)
+    for b in range(B):
+        row = b // 8
+        col = b % 8
 
-    raise Exception("Image input must be either numpy array or torch tensor")
+        cropped_img = color_image[(row)*W:(row+2)*W,(col+1)*H:(col+2)*H,:] 
+        cropped_img = Image.fromarray(cropped_img, 'RGB')
+        concat_images[b] = transforms(cropped_img)             
+
+    return concat_images
