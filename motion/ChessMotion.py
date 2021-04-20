@@ -13,9 +13,11 @@ sys.path.append('../common')
 from known_grippers import robotiq_85_kinova_gen3
 sys.path.append("../motion/planners")
 from pickPlanner import *
+from placePlanner import *
 from motionGlobals import *
 import grasp_database
-
+PIECE_SCALE = 0.05
+TILE_SCALE = (0.05, 0.05, 0.005)
 class ChessMotion:
     """
         Executes pick-and-place motion plans on the chessboard
@@ -42,32 +44,49 @@ class ChessMotion:
         tile = self.board[square]['tile']
         print("TILE:",tile.getTransform())
         return self.plan_pick_grasps(self.get_square_transform(square))
-    def get_square_transform(self, square):
+    def get_target_transform(self, square):
+        """ Returns target transform to place a piece at a given square
+        """
         tile = self.board[square]['tile']
         R,t = tile.getTransform()
-        Tobj = obj.getTransform()
-        Tobject_grasp = se3.mul(se3.inv(gripper_link.getTransform()),Tobj)
-        R_flip_y = so3.rotation([1,0,0],math.pi)
-        R = so3.mul(R_flip_y,R) # makes gripper face downward
-        t = vectorops.add(t, [0,0,0.2])# add 20 cm in z to avoid collision
+        t = vectorops.add(t, [TILE_SCALE[0]/2,TILE_SCALE[0]/2,2*TILE_SCALE[2]])# place right above tile to avoid collision
         return (R,t)
     def get_object_grasps(self, name, T_obj):
+        """ Returns a list of transformed grasp objects from the db for the given object name and transform 
+        """
         orig_grasps = self.db.object_to_grasps[name]
         grasps = [grasp.get_transformed(T_obj) for grasp in orig_grasps]
         return grasps
     def plan_to_piece(self,square):
+        """ Finds the piece object on a given square and plans to pick it up
+        """
         piece = self.board[square]['piece'][1]
         self.currentObject = piece
-        print(piece)
         name = piece.getName().split('_')[0]
         grasps = self.get_object_grasps(name, piece.getTransform())
         path = plan_pick_multistep(self.world,self.robot,self.currentObject,self.gripper,grasps)
         return path
     def plan_to_place(self,square):
-        
+        """ Before calling this function, 
+        current robot config must be gripping the object so T_object_gripper will be correct
+        """
+        print(self.currentObject.getName())
+        Tobj = self.currentObject.getTransform()
+        link = self.robot.link(self.gripper.base_link)
+        Tobject_gripper = se3.mul(se3.inv(link.getTransform()),Tobj)
+        T_target = self.get_target_transform(square)
+        print(T_target)
+        path = plan_place_target(self.world, self.robot,self.currentObject,Tobject_gripper,self.gripper,T_target)
+        return path
+    def check_collision(self):
+        return is_collision_free_grasp(self.world, self.robot, self.currentObject)
     def go_to_square(self,square):
-        return self.solve_robot_ik(self.get_square_transform(square))
-
+        Tobj = self.currentObject.getTransform()
+        link = self.robot.link(self.gripper.base_link)
+        Tobject_gripper = se3.mul(se3.inv(link.getTransform()),Tobj)
+        T_target = self.get_target_transform(square)
+        T_grip = se3.mul(T_target,se3.inv(Tobject_gripper))
+        return self.solve_robot_ik(T_grip)
     def solve_robot_ik(self,Tgripper):
         """Given a robot, a gripper, and a desired gripper transform,
         solve the IK problem to place the gripper at the desired transform.

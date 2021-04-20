@@ -20,7 +20,7 @@ class PickPlanner(MultiStepPlanner):
     """For problem 2C
     """
     def __init__(self,world,robot,object,gripper,grasps):
-        MultiStepPlanner.__init__(self,['grasp','qgrasp','approach','transit','lift'])
+        MultiStepPlanner.__init__(self,['grasp','qgrasp','approach','transit'])#,'lift'])
         self.qstart = robot.getConfig()
         self.world=world
         self.robot=robot
@@ -65,13 +65,13 @@ class PickPlanner(MultiStepPlanner):
                 return None
         return transit
 
-    def solve_lift(self,qgrasp):
-        #TODO: solve for the lifting configurations
-        self.robot.setConfig(qgrasp)
-        distance = 0.1
-        qlift = retract(self.robot, self.gripper, vectorops.mul([0,0,1],distance), local=False) # move up a distance
-        self.robot.setConfig(self.qstart)
-        return qlift
+    # def solve_lift(self,qgrasp):
+    #     #TODO: solve for the lifting configurations
+    #     self.robot.setConfig(qgrasp)
+    #     distance = 0.1
+    #     qlift = retract(self.robot, self.gripper, vectorops.mul([0,0,1],distance), local=False) # move up a distance
+    #     self.robot.setConfig(self.qstart)
+    #     return qlift
 
     def solve_item(self,plan,item):
         """Returns a pair (status,children) where status is one of the codes FAIL,
@@ -109,12 +109,12 @@ class PickPlanner(MultiStepPlanner):
             else:
                 print("Transit planning succeeded!")
                 return StepResult.CHILDREN,[result]
-        if item == 'lift':
-            qgrasp = plan['qgrasp']
-            result = self.solve_lift(qgrasp)
-            if result is None:
-                return StepResult.FAIL,[]
-            return StepResult.CHILDREN,[result]
+        # if item == 'lift':
+        #     qgrasp = plan['qgrasp']
+        #     result = self.solve_lift(qgrasp)
+        #     if result is None:
+        #         return StepResult.FAIL,[]
+        #     return StepResult.CHILDREN,[result]
         raise ValueError("Invalid item "+item)
 
 
@@ -130,9 +130,8 @@ class PickPlanner(MultiStepPlanner):
         transit = plan['transit']
         approach = plan['approach']        
         qgrasp = plan['qgrasp']
-        qlift = plan['lift']
-        #TODO: construct the RobotTrajectory triple as in plan_pick_one
-        return (RobotTrajectory(self.robot,milestones=[qstart]+transit),RobotTrajectory(self.robot,milestones=approach),RobotTrajectory(self.robot,milestones=[qgrasp,qlift]))
+        # qlift = plan['lift']
+        return (RobotTrajectory(self.robot,milestones=[qstart]+transit),RobotTrajectory(self.robot,milestones=approach))#,RobotTrajectory(self.robot,milestones=[qgrasp,qlift]))
 
     
 def plan_pick_multistep(world,robot,object,gripper,grasps):

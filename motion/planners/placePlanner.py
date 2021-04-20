@@ -16,7 +16,7 @@ from multiStepPlanner import *
 from motionGlobals import *
 from motionHelpers import *
 from planning import *
-
+import random
 class PlacePlanner(MultiStepPlanner):
     """
     Plans a placing motion for a given object and a specified grasp.
@@ -37,18 +37,18 @@ class PlacePlanner(MultiStepPlanner):
     Tip:
         vis.debug(q,world=world) will show a configuration.
     """
-    def __init__(self,world,robot,object,Tobject_gripper,gripper,goal_bounds):
-        MultiStepPlanner.__init__(self,['placement','qplace','qpreplace','retract','transfer'])
+    def __init__(self,world,robot,object,Tobject_gripper,gripper,target=None,goal_bounds=None):
+        MultiStepPlanner.__init__(self,['lift','placement','qplace','qpreplace','retract','transfer'])
         self.world=world
         self.robot=robot
         self.object=object
         self.Tobject_gripper=Tobject_gripper
         self.gripper=gripper
         self.goal_bounds=goal_bounds
-
+        self.T_target = target
         object.setTransform(*se3.identity())
         self.objbb = object.geometry().getBBTight()
-        self.qstart = robot.getConfig()  #lift 
+        self.qstart = robot.getConfig()  #grasped object 
 
     def object_free(self,q):
         """Helper: returns true if the object is collision free at configuration q, if it is
@@ -67,6 +67,13 @@ class PlacePlanner(MultiStepPlanner):
 
     def solve_placement(self):
         """Implemented for you: come up with a collision-free target placement"""
+        if self.T_target is not None:
+            print("Used given target transform")
+            print(self.T_target)
+            return [self.T_target]
+        if self.goal_bounds is None:
+            print("No Goal Bounds")
+            return None
         obmin,obmax = self.objbb
         ozmin = obmin[2]
         min_dims = min(obmax[0]-obmin[0],obmax[1]-obmin[1])
@@ -125,16 +132,26 @@ class PlacePlanner(MultiStepPlanner):
         ret = is_collision_free_grasp(self.world, self.robot, self.object) # Check new arm position is valid
         for i in range(self.world.numTerrains()): # Check object to cabinet/robot stand collisions
             if self.object.geometry().collides(self.world.terrain(i).geometry()):
+                print("obj collides with terrain!")
                 ret = False
         for i in range(self.world.numRigidObjects()):
             if i == self.object.index: continue
             if self.object.geometry().collides(self.world.rigidObject(i).geometry()):
+                print("Cur obj",self.object.getName(), self.object.index, \
+                    "collides with object:", self.world.rigidObject(i).getName(), i)
                 ret = False
         #vis.debug(self.robot)
         # Reset robot/object transform
         self.object.setTransform(*obj_start)
         self.robot.setConfig(qstart)
         return ret
+    def solve_lift(self):
+        #TODO: solve for the lifting configurations
+        self.robot.setConfig(self.qstart)
+        distance = 0.1
+        qlift = retract(self.robot, self.gripper, vectorops.mul([0,0,1],distance), local=False) # move up a distance
+        self.robot.setConfig(self.qstart)
+        return qlift
     def solve_qplace(self,Tplacement):
         #TODO: solve for the placement configuration
         if not isinstance(self.gripper,(int,str)):
@@ -145,7 +162,11 @@ class PlacePlanner(MultiStepPlanner):
         #res = ik.solve(obj)
         res = ik.solve_global(obj, iters=100, numRestarts = 10, feasibilityCheck=self.check_collision)
         if not res:
-            return None
+            global DEBUG_MODE
+            if DEBUG_MODE:
+                return self.robot.getConfig()
+            else:
+                return None
         return self.robot.getConfig()
 
     def solve_preplace(self,qplace):
@@ -166,14 +187,14 @@ class PlacePlanner(MultiStepPlanner):
         self.robot.setConfig(self.qstart)
         return [qopen,qlift]
 
-    def solve_transfer(self,qpreplace):
+    def solve_transfer(self,qpreplace,qlift):
         #TODO: solve for the transfer plan
         moving_joints = [1,2,3,4,5,6,7]
         gripper_link = 9
-        self.robot.setConfig(self.qstart)
+        self.robot.setConfig(qlift)
         if qpreplace is None:
             return None
-        # Store important variables globally so is_obj_collide can access them
+
         planOpts = {'type':'sbl','perturbationRadius':0.5,'shortcut':True,'restart':True,'restartTermCond':"{foundSolution:1,maxIters:100}"}
         plan = robotplanning.planToConfig(self.world, self.robot, qpreplace, edgeCheckResolution=1e-2, 
                                             extraConstraints=[self.check_collision],
@@ -195,14 +216,22 @@ class PlacePlanner(MultiStepPlanner):
         plan.close()
         return path
     def assemble_result(self,plan):
+        qlift = plan['lift']
         transfer = plan['transfer']
         qplace = plan['qplace']
         qpreplace = plan['qpreplace']
         retract = plan['retract']
         #TODO: construct the RobotTrajectory tuple (transfer,lower,retract)
-        return (RobotTrajectory(self.robot,milestones=[self.qstart]+transfer),RobotTrajectory(self.robot,milestones=[qpreplace,qplace]),RobotTrajectory(self.robot,milestones=retract))
+        return (RobotTrajectory(self.robot,milestones=[self.qstart,qlift]+transfer),RobotTrajectory(self.robot,milestones=[qpreplace,qplace]),RobotTrajectory(self.robot,milestones=retract))
 
     def solve_item(self,plan,item):
+        if item == 'lift':
+            result = self.solve_lift()
+            if result is None:
+                print("Lifting object failed")
+                return StepResult.FAIL,[]
+            print("Found Lift config")
+            return StepResult.CHILDREN,[result]
         if item == 'placement':
             print("Finding Placement")
             Ts = self.solve_placement()
@@ -233,17 +262,22 @@ class PlacePlanner(MultiStepPlanner):
                 print("Retraction Planning Succeeded")
                 return StepResult.CHILDREN,[retract]
         if item == 'transfer':
-            transfer = self.solve_transfer(plan['qpreplace'])
+            transfer = self.solve_transfer(plan['qpreplace'], plan['lift'])
             if transfer is None:
                 print("Transfer planning failed, trying again...")
                 return StepResult.CONTINUE,[]
             else:
                 print("Transfer planning succeeded!")
                 return StepResult.CHILDREN,[transfer]
+
         raise ValueError("Invalid item "+item)
 
 
 def plan_place(world,robot,obj,Tobject_gripper,gripper,goal_bounds):
-    planner = PlacePlanner(world,robot,obj,Tobject_gripper,gripper,goal_bounds)
+    planner = PlacePlanner(world,robot,obj,Tobject_gripper,gripper,None,goal_bounds)
+    time_limit = 60
+    return planner.solve(time_limit)
+def plan_place_target(world,robot,obj,Tobject_gripper,gripper,target):
+    planner = PlacePlanner(world,robot,obj,Tobject_gripper,gripper,target)
     time_limit = 60
     return planner.solve(time_limit)

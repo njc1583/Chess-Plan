@@ -44,7 +44,6 @@ if __name__ == '__main__':
         exit(0)
     for i in range(world.numRigidObjects()):
         obj = world.rigidObject(i)
-        print(obj.getName(),obj.index)
         #this will perform a reasonable center of mass / inertia estimate
         m = obj.getMass()
         m.estimate(obj.geometry(),mass=0.454,surfaceFraction=0.2)
@@ -70,8 +69,7 @@ if __name__ == '__main__':
 
     qstart = robot.getConfig()
     motion = ChessMotion(world, robot, chessEngine.boardTiles)
-    solved_trajectory = None
-    trajectory_is_transfer = None
+
     def planTriggered():
         global world,robot
         robot.setConfig(qstart)
@@ -83,23 +81,13 @@ if __name__ == '__main__':
             (transit,approach) = path
             traj = transit
             traj = traj.concat(approach,relative=True,jumpPolicy='jump')
-
+            vis.add("traj",traj,endEffectors=[9])
             robot.setConfig(approach.milestones[-1])
             target_square = 'A4' #input("Target Square:")
             tTarget = motion.get_target_transform(target_square)
             vis.add("targetTransform", tTarget)
-            print("attempting plan to place")
-            res = motion.plan_to_place(target_square)
-            if res is None:
-                print("Unable to plan place")
-            else:
-                (transfer,lower,retract) = res
-                traj = traj.concat(transfer,relative=True,jumpPolicy='jump')
-                traj = traj.concat(lower,relative=True,jumpPolicy='jump')
-                traj = traj.concat(retract,relative=True,jumpPolicy='jump')
-                solved_trajectory = traj
-            vis.add("traj",traj,endEffectors=[9])
-            vis.animate(vis.getItemName(robot),traj)
+            qTarget = motion.go_to_square(target_square)
+            robot.setConfig(qTarget)
         
     vis.addAction(planTriggered,"Plan to target",'p')
 

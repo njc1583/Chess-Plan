@@ -184,7 +184,7 @@ class ChessEngine:
             oname = f'{name}_{colorn}_{i}'
 
             objs.append((oname, o))
-            self.world.add(oname, o)
+            # self.world.add(oname, o)
 
             # TODO: Remove in later dates
             # Known bug that objects appear near the center of the world
