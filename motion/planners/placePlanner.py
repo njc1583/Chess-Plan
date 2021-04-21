@@ -148,7 +148,7 @@ class PlacePlanner(MultiStepPlanner):
     def solve_lift(self):
         #TODO: solve for the lifting configurations
         self.robot.setConfig(self.qstart)
-        distance = 0.1
+        distance = 0.2
         qlift = retract(self.robot, self.gripper, vectorops.mul([0,0,1],distance), local=False) # move up a distance
         self.robot.setConfig(self.qstart)
         return qlift
@@ -172,7 +172,7 @@ class PlacePlanner(MultiStepPlanner):
     def solve_preplace(self,qplace):
         #TODO: solve for the preplacement configuration
         self.robot.setConfig(qplace)
-        distance = 0.1
+        distance = 0.2
         qpreplace = retract(self.robot, self.gripper, vectorops.mul(self.gripper.primary_axis,-1*distance), local=True)
         self.robot.setConfig(self.qstart)
         return qpreplace
@@ -181,7 +181,7 @@ class PlacePlanner(MultiStepPlanner):
         #TODO: solve for the retraction step
         self.robot.setConfig(qplace)
         qopen = self.gripper.set_finger_config(qplace,self.gripper.partway_open_config(1))   #open the fingers further
-        distance = 0.1
+        distance = 0.2
         self.robot.setConfig(qopen)
         qlift = retract(self.robot, self.gripper, vectorops.mul([0,0,1],distance), local=False) # move up a distance
         self.robot.setConfig(self.qstart)

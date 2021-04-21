@@ -64,7 +64,7 @@ if __name__ == '__main__':
     def planTriggered():
         global world, robot, motion, solved_trajectory, trajectory_is_transfer
         robot.setConfig(qstart)
-        square = 'A1'#input("Square:")
+        square = 'D1'#input("Square:")
         path = motion.plan_to_piece(square)
         if path is None:
             print("Unable to plan pick")
