@@ -6,7 +6,7 @@ from klampt import RobotModel
 import math
 import time
 import sys
-sys.path.append("../motion")
+sys.path.append("../motion/planners")
 from motionGlobals import *
 
 def feasible_plan(world,robot,qtarget):
@@ -33,7 +33,6 @@ def feasible_plan(world,robot,qtarget):
         t1 = time.time()
         c +=1
     print(f"Planning time: {t1-t0} iterations: {numIters} looped times: {c}")
-    debug_plan_results(plan, robot)
     #to be nice to the C++ module, do this to free up memory
     plan.space.close()
     plan.close()
