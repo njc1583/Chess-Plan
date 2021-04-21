@@ -1,9 +1,0 @@
-mesh Bishop_6/Bishop.off
-T 1 0 0 0 1 0 0 0 1 0.75 0.2 0.6425
-mass 1
-com 0.00341293 -0.00979696 0.516777
-inertia 0.159334 6.57088e-11 -0.000885701 6.57088e-11 0.15929 -2.73885e-10 -0.000885701 -2.73885e-10 0.0268311
-kFriction 0.5
-kRestitution 0.5
-kStiffness inf
-kDamping inf

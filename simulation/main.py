@@ -66,6 +66,8 @@ if __name__ == '__main__':
     chessEngine.arrangeBoard(0)
     chessEngine.arrangePieces()
 
+    chessEngine.visualizeBoardCorners(vis)
+
     vis.add("world",world)
 
     qstart = robot.getConfig()
@@ -74,7 +76,7 @@ if __name__ == '__main__':
     def planTriggered():
         global world,robot
         robot.setConfig(qstart)
-        square = "H8"
+        square = "h8"
         path = motion.plan_to_square(square)
         if path is None:
             print("Unable to plan pick")
