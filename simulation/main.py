@@ -66,47 +66,8 @@ if __name__ == '__main__':
     trajectory_is_transfer = None
     def planTriggered():
         global world, robot, motion, solved_trajectory, trajectory_is_transfer
-        robot.setConfig(qstart)
-        square = input("Piece Square:")
-        path = motion.plan_to_piece(square)
-        if path is None:
-            print("Unable to plan pick")
-        else:
-            trajectory_is_transfer = Trajectory()
-            trajectory_is_transfer.times.append(0)
-            trajectory_is_transfer.milestones.append([0])
+        solved_trajectory,trajectory_is_transfer = motion.construct_trajectory("e4")
 
-            (transit,approach) = path
-            traj = transit
-            traj = traj.concat(approach,relative=True,jumpPolicy='jump')
-            trajectory_is_transfer.times.append(traj.endTime())
-            trajectory_is_transfer.times.append(traj.endTime())
-            trajectory_is_transfer.milestones.append([0])
-            trajectory_is_transfer.milestones.append([1])
-            robot.setConfig(approach.milestones[-1])
-            target_square = input("Target Square:")
-            tTarget = motion.get_target_transform(target_square)
-            vis.add("targetTransform", tTarget)
-            print("attempting plan to place")
-            res = motion.plan_to_place(target_square)
-            if res is None:
-                print("Unable to plan place")
-            else:
-                (transfer,lower,retract) = res
-                traj = traj.concat(transfer,relative=True,jumpPolicy='jump')
-                traj = traj.concat(lower,relative=True,jumpPolicy='jump')
-                trajectory_is_transfer.times.append(traj.endTime())
-                trajectory_is_transfer.times.append(traj.endTime())
-                trajectory_is_transfer.milestones.append([1])
-                trajectory_is_transfer.milestones.append([0])
-                traj = traj.concat(retract,relative=True,jumpPolicy='jump')
-                trajectory_is_transfer.times.append(traj.endTime())
-                trajectory_is_transfer.milestones.append([0])
-                solved_trajectory = traj
-            vis.add("traj",traj,endEffectors=[9])
-            robot.setConfig(qstart)
-
-            # vis.animate(vis.getItemName(robot),traj)
     vis.addAction(planTriggered,"Plan to target",'p')
 
     executing_plan = False
@@ -120,12 +81,13 @@ if __name__ == '__main__':
 
     vis.addAction(executePlan,"Execute plan",'e')
 
-    was_grasping = False
     def loop_callback():
-        global was_grasping,solved_trajectory,trajectory_is_transfer,executing_plan,execute_start_time
-        if not executing_plan:
+        global motion, solved_trajectory, trajectory_is_transfer
+        if not motion.executing_plan:
+            san = input("Enter Chess Move:")
+            solved_trajectory,trajectory_is_transfer = motion.make_move(san)
             return
-        t = time.time()-execute_start_time
+        t = time.time()-motion.execute_start_time
         vis.addText("time","Time %.3f"%(t),position=(10,10))
         qcurrent = solved_trajectory.eval(t)
         robot.setConfig(qcurrent)
@@ -133,7 +95,8 @@ if __name__ == '__main__':
         if during_transfer:
             motion.currentObject.setTransform(*se3.mul(robot.link(9).getTransform(),motion.Tobject_gripper))
         if t > solved_trajectory.duration():
-            executing_plan = False
+            motion.executing_plan = False
             solved_trajectory = None
+            robot.setConfig(qstart)
 
-    vis.loop(callback=loop_callback)
+    vis.loop(callback=motion.loop_callback)

@@ -155,7 +155,7 @@ class PlacePlanner(MultiStepPlanner):
         self.robot.setConfig(self.qstart)
         return qlift
     def solve_qplace(self,Tplacement):
-        #TODO: solve for the placement configuration
+        #TODO: adjust ik objective to allow rotation about z for placement configuration
         if not isinstance(self.gripper,(int,str)):
             temp_gripper = self.gripper.base_link
         link = self.robot.link(temp_gripper)
