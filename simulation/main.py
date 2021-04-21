@@ -56,6 +56,8 @@ if __name__ == '__main__':
     chessEngine.arrangeBoard(0)
     chessEngine.arrangePieces()
 
+    chessEngine.visualizeBoardCorners(vis)
+
     vis.add("world",world)
 
     qstart = robot.getConfig()

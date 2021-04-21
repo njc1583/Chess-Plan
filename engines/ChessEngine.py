@@ -1,11 +1,14 @@
-from PieceEnum import TileType
+# from engines.EngineUtils import TileType,enum_to_piece
+
 from klampt.math import vectorops,so3,se3
 import sys
 import math
 import random
 
-from klampt.robotsim import Mass
+import chess
+from chess import Piece,PieceType,Color
 
+from klampt.robotsim import Mass
 
 sys.path.append("../common")
 
@@ -16,8 +19,11 @@ TILE_DIRECTORY = '../data/objects/cube.off'
 PIECE_SCALE = 0.05
 TILE_SCALE = (0.05, 0.05, 0.005)
 
-BOARD_X = 'ABCDEFGH'
-BOARD_Y = '12345678'
+# WHITE_TILE = (0,0,0,1)
+# BLACK_TILE = (1,1,1,1)
+WHITE_TILE = (235/255, 235/255, 235/255, 1)
+# BLACK_TILE = (125/255, 125/255, 125/255, 1)
+BLACK_TILE = (36/255, 64/255, 51/255, 1)
 
 TILE = 'tile'
 PIECE = 'piece'
@@ -28,31 +34,90 @@ class ChessEngine:
         self.world = world
         self.tabletop = tabletop
 
-        self.boardTiles = {}
-        self.pieces = {} 
+        self.boardTiles = None
+        self.pieces = None
 
         self.WHITE = (253/255, 217/255, 168/255, 1)
         # self.BLACK = (45/255, 28/255, 12/255, 1)
         # self.BLACK = (110/255, 80/255, 16/255, 1)
-        self.BLACK = (79/255, 56/255, 6/255, 1)
+        # self.BLACK = (79/255, 56/255, 6/255, 1)
+        self.BLACK = (40/255, 40/255, 40/255, 1)
 
         self.board_rotation = 0
 
         self.pieceRotations = {}
-        self.pieceRotations['Knight_w'] = math.pi 
-        self.pieceRotations['Bishop_w'] = math.pi/2
-        self.pieceRotations['Bishop_b'] = -math.pi/2
+        self.pieceRotations['N'] = math.pi/2
+        self.pieceRotations['n'] = -math.pi/2 
+        self.pieceRotations['K'] = math.pi/2
+        self.pieceRotations['k'] = -math.pi/2
+        self.pieceRotations['b'] = math.pi
 
-    def _getPieceType(self, name):
-        return '_'.join(name.split('_')[:2])
+    @classmethod
+    def numberToPiece(cls, number):
+        if number <= 0 or number > 12:
+            return None 
+
+        white = number <= 6 
+
+        if not white:
+            number -= 6 
+
+        return Piece(number, white)
+
+    @classmethod
+    def pieceNameToPiece(cls, name):
+        """ Takes the name of a chesspiece and returns the python-chess
+        Piece type
+        """
+        split_name = name.split('_')
+
+        black = split_name[1] == 'b'
+
+        symbol = split_name[0][0]
+
+        if split_name[0] == 'Knight':
+            symbol = 'N'
+
+        if black: 
+            symbol = symbol.lower()
+
+        return Piece.from_symbol(symbol)
+
+    @classmethod
+    def pieceNameToNumber(cls, name):
+        """ Converts the chess piece name into a number
+        """
+        if name is None:
+            return 0
+
+        piece = ChessEngine.pieceNameToPiece(name)
+
+        if piece.color:
+            return piece.piece_type
+        
+        return piece.piece_type + 6
+
 
     def _getPieceRotation(self, name):
-        ptype = self._getPieceType(name)
+        """ Returns default rotation of a piece (default 0 for most pieces)
+        """
+        ptype = ChessEngine.pieceNameToPiece(name)
 
-        if ptype in self.pieceRotations:
-            return self.pieceRotations[ptype]
+        if ptype.symbol() in self.pieceRotations:
+            return self.pieceRotations[ptype.symbol()]
         else:
             return 0
+
+    def _getPieceNumberAtTile(self, tilename):
+        """
+        Retrieves the file
+        """
+        pname, piece = self.boardTiles[tilename][PIECE] 
+
+        if piece is None:
+            return 0
+
+        return ChessEngine.pieceNameToNumber(pname)
 
     def _clearBoard(self):
         """ Removes all current pieces from the board
@@ -96,9 +161,9 @@ class ChessEngine:
         table_c_x = (table_bmax[0] + table_bmin[0]) / 2
         table_c_y = (table_bmax[1] + table_bmin[1]) / 2
 
-        for i in range(len(BOARD_X)):
-            for j in range(len(BOARD_Y)):
-                tilename = BOARD_X[i] + BOARD_Y[j]
+        for i,rank_name in enumerate(chess.RANK_NAMES):
+            for j,file_name in enumerate(chess.FILE_NAMES):
+                tilename = file_name + rank_name
 
                 sx = (i - 4) * TILE_SCALE[0]
                 sy = (j - 4) * TILE_SCALE[1]
@@ -123,9 +188,9 @@ class ChessEngine:
         :param: default if True, the pieces are arranged on the board
         as a default chess board setup 
         """
-        for i in range(len(BOARD_X)):
-            for j in range(len(BOARD_Y)):
-                tilename = BOARD_X[i] + BOARD_Y[j]
+        for i,file_name in enumerate(chess.FILE_NAMES):
+            for j,rank_name in enumerate(chess.RANK_NAMES):
+                tilename = file_name + rank_name
 
                 if default:
                     pname, piece = self.boardTiles[tilename][DEFAULT]
@@ -183,6 +248,8 @@ class ChessEngine:
             o.appearance().setColor(r,g,b,a)
             oname = f'{name}_{colorn}_{i}'
 
+            o.setName(oname)
+
             objs.append((oname, o))
             # self.world.add(oname, o)
 
@@ -197,6 +264,12 @@ class ChessEngine:
         """ Loads default configuration for pieces; loads tiles from
         object files; populates self.boardTiles
         """
+        if self.boardTiles is not None:
+            print('The board has already been loaded; subsequent calls to this function are redundant')
+            return
+
+        self.boardTiles = {}
+
         default_file = open('../engines/default_board.conf')
 
         default_pieces = {}
@@ -208,15 +281,15 @@ class ChessEngine:
 
         default_file.close()
 
-        white_tiles = self.loadObjects('Square', (1,1,1,1), 'w', 32, TILE_SCALE, False, TILE_DIRECTORY)
-        black_tiles = self.loadObjects('Square', (0,0,0,1), 'b', 32, TILE_SCALE, False, TILE_DIRECTORY)
+        white_tiles = self.loadObjects('Square', WHITE_TILE, 'w', 32, TILE_SCALE, False, TILE_DIRECTORY)
+        black_tiles = self.loadObjects('Square', BLACK_TILE, 'b', 32, TILE_SCALE, False, TILE_DIRECTORY)
 
         white_idx = 0
         black_idx = 0
 
-        for i in range(len(BOARD_X)):
-            for j in range(len(BOARD_Y)):
-                tilename = BOARD_X[i] + BOARD_Y[j]
+        for (i,file_name) in enumerate(chess.FILE_NAMES):
+            for (j,rank_name) in enumerate(chess.RANK_NAMES):
+                tilename = file_name + rank_name
 
                 self.boardTiles[tilename] = {
                     TILE: None,
@@ -245,18 +318,30 @@ class ChessEngine:
             table_bmax[2]
         ]
 
-    def getPieceEnumAtTile(self, tilename):
+    def getBoardCorners(self):
         """
-        Returns the enum of a piece at a tile on the board
+        Returns (clockwise) the set of points at the corners of the board
+        
+        NOTE: This method has undefined behavior if the board is not rotated by a degree divislbe by 90
         """
-        pname, piece = self.boardTiles[tilename][PIECE]
+        [x,y,z] = self.getTableCenter()
 
-        if piece is None:
-            return TileType.EMPTY
+        TILE_SPACE = 5
 
-        ptype = self._getPieceType(pname)
+        return [
+            [x-TILE_SCALE[0]*TILE_SPACE, y+TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]],
+            [x+TILE_SCALE[0]*TILE_SPACE, y+TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]],
+            [x+TILE_SCALE[0]*TILE_SPACE, y-TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]],
+            [x-TILE_SCALE[0]*TILE_SPACE, y-TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]]
+        ]
 
-        return TileType[ptype]
+    def visualizeBoardCorners(self, vis):
+        corner_coords = self.getBoardCorners()
+
+        vis.add('corner0', corner_coords[0], scale=0.05, color=(1,0,0,1))
+        vis.add('corner1', corner_coords[1], scale=0.05, color=(0,1,0,1))
+        vis.add('corner2', corner_coords[2], scale=0.05, color=(0,0,1,1))
+        vis.add('corner3', corner_coords[3], scale=0.05, color=(1,0,1,1))
 
     def getPieceArrangement(self):
         """
@@ -268,15 +353,22 @@ class ChessEngine:
         """
         arrangement = []
 
-        for n in BOARD_Y[::-1]:
-            for l in BOARD_X:
-                tilename = l + n
-                arrangement.append(str(self.getPieceEnumAtTile(tilename).value))
+        for rank_name in chess.RANK_NAMES[::-1]:                 
+            for file_name in chess.FILE_NAMES:
+                tilename = file_name + rank_name
+                # arrangement.append(str(self._getPieceNumberAtTile(tilename)))
+                arrangement.append(self._getPieceNumberAtTile(tilename))
 
-        return ';'.join(arrangement)
+        return arrangement
 
     def loadPieces(self):
         """ Loads pieces from object files, and populates self.pieces """
+        if self.pieces is not None:
+            print('Pieces have already been loaded; subsequent calls to this function are redundant')
+            return 
+
+        self.pieces = {}
+        
         pieces = [] 
         
         pieces.extend(self.loadObjects('Rook', self.WHITE, 'w', 2, PIECE_SCALE, True))
