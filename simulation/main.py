@@ -67,7 +67,7 @@ if __name__ == '__main__':
     def planTriggered():
         global world, robot, motion, solved_trajectory, trajectory_is_transfer
         robot.setConfig(qstart)
-        square = 'D1'#input("Square:")
+        square = input("Piece Square:")
         path = motion.plan_to_piece(square)
         if path is None:
             print("Unable to plan pick")
@@ -84,7 +84,7 @@ if __name__ == '__main__':
             trajectory_is_transfer.milestones.append([0])
             trajectory_is_transfer.milestones.append([1])
             robot.setConfig(approach.milestones[-1])
-            target_square = 'A4' #input("Target Square:")
+            target_square = input("Target Square:")
             tTarget = motion.get_target_transform(target_square)
             vis.add("targetTransform", tTarget)
             print("attempting plan to place")
@@ -121,7 +121,6 @@ if __name__ == '__main__':
     vis.addAction(executePlan,"Execute plan",'e')
 
     was_grasping = False
-    print("Num objs orig:",world.numRigidObjects())
     def loop_callback():
         global was_grasping,solved_trajectory,trajectory_is_transfer,executing_plan,execute_start_time,qstart
         if not executing_plan:
@@ -132,7 +131,6 @@ if __name__ == '__main__':
         robot.setConfig(qstart)
         during_transfer = trajectory_is_transfer.eval(t)[0]
         if during_transfer:
-            print("Num objs:",world.numRigidObjects())
             motion.currentObject.setTransform(*se3.mul(robot.link(9).getTransform(),motion.Tobject_gripper))
         if t > solved_trajectory.duration():
             executing_plan = False
