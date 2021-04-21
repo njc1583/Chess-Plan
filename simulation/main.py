@@ -29,6 +29,7 @@ if __name__ == '__main__':
     fn = "./main.xml"
     world = WorldModel()
     res = world.readFile(fn)
+    print(res)
     if not res:
         print("Unable to read file",fn)
         exit(0)
