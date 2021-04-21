@@ -122,13 +122,13 @@ if __name__ == '__main__':
 
     was_grasping = False
     def loop_callback():
-        global was_grasping,solved_trajectory,trajectory_is_transfer,executing_plan,execute_start_time,qstart
+        global was_grasping,solved_trajectory,trajectory_is_transfer,executing_plan,execute_start_time
         if not executing_plan:
             return
         t = time.time()-execute_start_time
         vis.addText("time","Time %.3f"%(t),position=(10,10))
-        qstart = solved_trajectory.eval(t)
-        robot.setConfig(qstart)
+        qcurrent = solved_trajectory.eval(t)
+        robot.setConfig(qcurrent)
         during_transfer = trajectory_is_transfer.eval(t)[0]
         if during_transfer:
             motion.currentObject.setTransform(*se3.mul(robot.link(9).getTransform(),motion.Tobject_gripper))

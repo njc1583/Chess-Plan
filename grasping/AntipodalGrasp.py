@@ -73,12 +73,14 @@ class AntipodalGrasp:
         
         # T_ow = obj.getTransform() # object to world
         # grasp_w = AntipodalGrasp(se3.apply(T_ow,grasp_local.center),se3.apply_rotation(T_ow,grasp_local.axis))
+        grasp_center2 = vectorops.add(self.center,[0,0,0.01])
         finger_center = vectorops.add(self.gripper.center,vectorops.mul(self.gripper.primary_axis,self.gripper.finger_length))
+        finger_center2 = vectorops.add(self.gripper.center,vectorops.mul(self.gripper.primary_axis,self.gripper.finger_length-0.01))
         # solve to get finger_center->grasp_center, finger_axis_pt->grasp_axis_pt
         finger_axis_pt = vectorops.add(finger_center,vectorops.mul(self.gripper.secondary_axis,0.01))
         grasp_axis_pt = vectorops.add(self.center,vectorops.mul(self.axis,0.01))
         link = robot.link(self.gripper.base_link)
-        goal = ik.objective(link,local=[finger_center, finger_axis_pt],world=[self.center,grasp_axis_pt])
+        goal = ik.objective(link,local=[finger_center, finger_axis_pt,finger_center2],world=[self.center,grasp_axis_pt,grasp_center2])
         return goal
     def genGrasp(self, robot):
         grasp = Grasp(  ik_constraint=self.genIKObjective(robot),

@@ -68,7 +68,7 @@ if __name__ == '__main__':
             # g.add_to_vis(name) 
         print("Piece:",piece.getName(), "maxScore:", maxScore)
         vis.add(piece.getName(),piece)
-        vis.run()
+        # vis.run()
     db.save("chess_grasps.json")
 
 
