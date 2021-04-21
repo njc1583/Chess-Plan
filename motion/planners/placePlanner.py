@@ -18,7 +18,7 @@ from motionHelpers import *
 from planning import *
 import random
 
-APPROACH_DIST = 0.15
+APPROACH_DIST = 0.2
 class PlacePlanner(MultiStepPlanner):
     """
     Plans a placing motion for a given object and a specified grasp.
@@ -282,5 +282,5 @@ def plan_place(world,robot,obj,Tobject_gripper,gripper,goal_bounds):
     return planner.solve(time_limit)
 def plan_place_target(world,robot,obj,Tobject_gripper,gripper,target):
     planner = PlacePlanner(world,robot,obj,Tobject_gripper,gripper,target)
-    time_limit = 60
+    time_limit = 10
     return planner.solve(time_limit)

@@ -60,43 +60,6 @@ if __name__ == '__main__':
 
     vis.add("world",world)
 
-    qstart = robot.getConfig()
     motion = ChessMotion(world, robot, chessEngine.boardTiles)
-    solved_trajectory = None
-    trajectory_is_transfer = None
-    def planTriggered():
-        global world, robot, motion, solved_trajectory, trajectory_is_transfer
-        solved_trajectory,trajectory_is_transfer = motion.construct_trajectory("e4")
-
-    vis.addAction(planTriggered,"Plan to target",'p')
-
-    executing_plan = False
-    execute_start_time = None
-    def executePlan():
-        global solved_trajectory,trajectory_is_transfer,executing_plan,execute_start_time
-        if solved_trajectory is None:
-            return
-        executing_plan = True
-        execute_start_time = time.time()
-
-    vis.addAction(executePlan,"Execute plan",'e')
-
-    def loop_callback():
-        global motion, solved_trajectory, trajectory_is_transfer
-        if not motion.executing_plan:
-            san = input("Enter Chess Move:")
-            solved_trajectory,trajectory_is_transfer = motion.make_move(san)
-            return
-        t = time.time()-motion.execute_start_time
-        vis.addText("time","Time %.3f"%(t),position=(10,10))
-        qcurrent = solved_trajectory.eval(t)
-        robot.setConfig(qcurrent)
-        during_transfer = trajectory_is_transfer.eval(t)[0]
-        if during_transfer:
-            motion.currentObject.setTransform(*se3.mul(robot.link(9).getTransform(),motion.Tobject_gripper))
-        if t > solved_trajectory.duration():
-            motion.executing_plan = False
-            solved_trajectory = None
-            robot.setConfig(qstart)
 
     vis.loop(callback=motion.loop_callback)
