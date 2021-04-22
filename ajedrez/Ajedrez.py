@@ -84,6 +84,9 @@ def get_aj_loss(criterions, alphas, pred, act):
 def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_epochs=10):
     criterion = nn.CrossEntropyLoss()
 
+    # train_losses = torch.zeros((2, num_epochs * len(train_loader)), device=device)
+    # test_losses = torch.zeros((2, num_epochs), device=device)
+
     for epoch in tqdm(range(num_epochs)):
         train_loss = 0.0
 

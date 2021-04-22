@@ -133,6 +133,12 @@ class ChessEngine:
         for tile in self.boardTiles:
             self.boardTiles[tile][PIECE] = (None, None)
 
+    def setPerspectiveWhite(self):
+        return self.perspective_white
+
+    def setPerspectiveWhite(self, perspective_white):
+        self.perspective_white = perspective_white
+
     def randomizePieces(self, num_pieces=0):
         """ Randomizes placement of pieces WITHOUT ARRANGING
         THEM ONTO THE BOARD
@@ -154,8 +160,6 @@ class ChessEngine:
         :param: rotation, in degrees, the clockwise rotation of the 
         chessboard
         """
-        self._clearBoard()
-
         rotation = math.radians(rotation)
 
         table_bmin,table_bmax = self.tabletop.geometry().getBBTight()
@@ -192,8 +196,6 @@ class ChessEngine:
         :param: default if True, the pieces are arranged on the board
         as a default chess board setup 
         """
-        self._clearBoard()
-
         for i,file_name in enumerate(chess.FILE_NAMES):
             for j,rank_name in enumerate(chess.RANK_NAMES):
                 tilename = file_name + rank_name
@@ -398,7 +400,6 @@ class ChessEngine:
         else:
             ranks = chess.RANK_NAMES
             files = chess.FILE_NAMES[::-1]
-            
 
         for rank_name in ranks:                 
             for file_name in files:
