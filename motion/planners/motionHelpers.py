@@ -7,22 +7,38 @@ from klampt.math import vectorops,so3,se3
 
 sys.path.append("../motion/planners")
 from motionGlobals import *
-finger_pad_links = ['gripper:Link 4','gripper:Link 6']
+finger_pad_links = ['gripper:Link_4','gripper:Link_6']
 
-def is_collision_free_grasp(world,robot,object):
+def is_collision_free_grasp(world,robot,obj, place=False):
     if robot.selfCollides():
         return False
     for i in range(world.numTerrains()):
         for j in range(robot.numLinks()):
             if robot.link(j).geometry().collides(world.terrain(i).geometry()):
+                if DEBUG_MODE:
+                    print("Robot-Terrain Collision Detected:", robot.link(j).getName(), j, "With", world.terrain(i).getName())
                 return False
     for i in range(world.numRigidObjects()):
         for j in range(robot.numLinks()):
-            if robot.link(j).geometry().collides(world.rigidObject(i).geometry()):
+            if obj and i == obj.index:
+                if robot.link(j).getName() not in finger_pad_links and robot.link(j).geometry().collides(obj.geometry()):
+                    if DEBUG_MODE:
+                        print("Grasped Object Collision Detected:", robot.link(j).getName(), j, "With", obj.getName())
+                    return False
+            elif robot.link(j).geometry().collides(world.rigidObject(i).geometry()):
+                if DEBUG_MODE:
+                    print("RigidObject-Robot Collision Detected:", robot.link(j).getName(), j, "With", world.rigidObject(i).getName())
                 return False
-    if object:
-        for j in range(robot.numLinks()):
-            if robot.link(j).getName() not in finger_pad_links and robot.link(j).geometry().collides(object.geometry()):
+    if place:
+        for i in range(world.numTerrains()):
+            if obj and obj.geometry().collides(world.terrain(i).geometry()):
+                if DEBUG_MODE:
+                    print("Grasped Object-Terrain Collision Detected:", world.terrain(i).getName(), j, "With", obj.getName())
+                return False
+        for i in range(world.numRigidObjects()):
+            if obj and i != obj.index and obj.geometry().collides(world.rigidObject(i).geometry()):
+                if DEBUG_MODE:
+                    print("Grasped Object-Object Collision Detected:", world.rigidObject(i).getName(), j, "With", obj.getName())
                 return False
     return True
 

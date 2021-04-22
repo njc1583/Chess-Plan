@@ -43,7 +43,7 @@ class PickPlanner(MultiStepPlanner):
 
     def solve_approach(self,grasp,qgrasp):
         #TODO: solve for the approach
-        distance = 0.1
+        distance = APPROACH_DIST
         qpregrasp = retract(self.robot, self.gripper, vectorops.mul(self.gripper.primary_axis,-1*distance), local=True)
         qopen = self.gripper.set_finger_config(qgrasp,self.gripper.partway_open_config(grasp.score + 0.1))   #open the fingers further
 

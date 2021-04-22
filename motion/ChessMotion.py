@@ -141,7 +141,7 @@ class ChessMotion:
                 trajectory_is_transfer.times.append(traj.endTime())
                 trajectory_is_transfer.milestones.append([0])
                 solved_trajectory = traj
-            # vis.add("traj",traj,endEffectors=[9])
+            vis.add("traj",traj,endEffectors=[9])
         self.robot.setConfig(self.qstart)
         if solved_trajectory is not None:
             self.executing_plan = True
