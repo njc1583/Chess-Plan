@@ -1,3 +1,4 @@
+import numpy
 import torch
 from torch import nn
 from torch import optim
@@ -5,6 +6,7 @@ import matplotlib.pyplot as plt
 import math
 import time
 import random
+import numpy as np
 
 import torch.optim
 from torchvision.transforms.transforms import Normalize
@@ -84,11 +86,16 @@ def get_aj_loss(criterions, alphas, pred, act):
 def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_epochs=10):
     criterion = nn.CrossEntropyLoss()
 
-    # train_losses = torch.zeros((2, num_epochs * len(train_loader)), device=device)
-    # test_losses = torch.zeros((2, num_epochs), device=device)
+    train_losses = np.zeros((2, num_epochs * len(train_loader)))
+    train_losses[0] = np.arange(num_epochs * len(train_loader))
+    test_losses = np.zeros((2, num_epochs+1))
+    test_losses[0] = np.arange(num_epochs+1)
 
-    for epoch in tqdm(range(num_epochs)):
+    def train_on_data():
         train_loss = 0.0
+        idx = 0
+
+        train_epoch_losses = np.zeros(len(train_loader))
 
         AJ.train()
 
@@ -104,14 +111,18 @@ def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_ep
 
             train_loss += loss.item()
 
+            train_epoch_losses[idx] = loss.item()
+
+            idx += 1
+
             loss.backward()
             optimizer.step()
 
-        train_loss /= len(train_loader)
+        return train_epoch_losses
 
-        print(f'Training Loss at Epoch: {epoch}: {train_loss}')
-
+    def test_on_data():
         AJ.eval()
+
         with torch.no_grad():
             test_loss = 0.0
 
@@ -127,9 +138,26 @@ def train(AJ, train_loader, test_loader, optimizer, lr_scheduler, device, num_ep
 
             test_loss /= len(test_loader)
 
-            print(f'Test Loss at Epoch: {epoch}: {test_loss}')
+        return test_loss
+
+
+    test_losses[1,0] = test_on_data()
+
+    for epoch in tqdm(range(num_epochs)):
+        train_epoch_losses = train_on_data()
+
+        print(f'Training Loss at Epoch: {epoch}: {train_epoch_losses.mean()}')
+        
+        test_epoch_loss = test_on_data()
+
+        print(f'Test Loss at Epoch: {epoch+1}: {test_epoch_loss}')
+
+        train_losses[1,epoch*len(train_loader):(epoch+1)*len(train_loader)] = train_epoch_losses
+        test_losses[1,epoch+1] = test_epoch_loss
 
         lr_scheduler.step()
+
+    return train_losses, test_losses
 
 if __name__ == "__main__":
     color_transforms = transforms.Compose([
