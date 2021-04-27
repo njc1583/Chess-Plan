@@ -34,9 +34,9 @@ class ChessEngine:
         self.world = world
         self.tabletop = tabletop
 
-        self.boardTiles = None
+        self.boardTiles = None          # Keeps track of piece and tile objects
         self.pieces = None
-
+        self.chessBoard = chess.Board() # Used to make logical chess moves
         self.perspective_white = perspective_white
 
         self.WHITE = (253/255, 217/255, 168/255, 1)
@@ -438,3 +438,42 @@ class ChessEngine:
 
         for (piece_name, piece_obj) in pieces:
             self.pieces[piece_name] = piece_obj
+    
+    # <--------- Functions used by ChessMotion ----------->
+    def get_square_transform(self, square:str, pname:str = None):
+        """ Returns target transform for a picking/placing a piece at a given square
+            Accounts for piece rotation
+        """
+        tile = self.boardTiles[square]['tile']
+        _,tile_t = tile.getTransform()
+        axis = [0,0,1]
+        rot = self.board_rotation 
+        if pname is not None:
+            rot += self._getPieceRotation(pname)
+        R = so3.from_axis_angle((axis, rot))
+        t = vectorops.add(tile_t, [TILE_SCALE[0]/2,TILE_SCALE[0]/2,1.1*TILE_SCALE[2]])# place right above tile to avoid collision
+        return (R,t)
+    def get_piece_obj_at(self,square:str):
+        piece = self.boardTiles[square]['piece'][1]
+        return piece
+    def check_move(self,san:str):
+        """ Checks if a given move can be made legally on the current board
+            Returns a Move object, start_square, and target_square on success 
+        """
+        try:
+            currentMove = self.chessBoard.parse_san(san)
+            if currentMove != chess.Move.null:
+                start_square = chess.square_name(currentMove.from_square)
+                target_square = chess.square_name(currentMove.to_square)
+                return currentMove,start_square,target_square
+        except ValueError:
+            print("Attempted Illegal/Ambiguous move:", san)
+        return None,None,None
+    def update_board(self,move:chess.Move):
+        """ Updates boardTiles and chessBoard pbjects for a successful move
+        """
+        self.chessBoard.push(move)
+        startSquare = chess.square_name(move.from_square)
+        endSquare = chess.square_name(move.to_square)
+        self.boardTiles[endSquare]['piece'] = self.boardTiles[startSquare]['piece']
+        self.boardTiles[startSquare]['piece'] = None

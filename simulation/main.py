@@ -60,6 +60,6 @@ if __name__ == '__main__':
 
     vis.add("world",world)
 
-    motion = ChessMotion(world, robot, chessEngine.boardTiles)
+    motion = ChessMotion(world, robot, chessEngine)
 
     vis.loop(callback=motion.loop_callback)
