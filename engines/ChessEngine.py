@@ -30,12 +30,14 @@ PIECE = 'piece'
 DEFAULT = 'default'
 
 class ChessEngine:
-    def __init__(self, world, tabletop):
+    def __init__(self, world, tabletop, perspective_white=True):
         self.world = world
         self.tabletop = tabletop
 
         self.boardTiles = None
         self.pieces = None
+
+        self.perspective_white = perspective_white
 
         self.WHITE = (253/255, 217/255, 168/255, 1)
         # self.BLACK = (45/255, 28/255, 12/255, 1)
@@ -130,6 +132,12 @@ class ChessEngine:
 
         for tile in self.boardTiles:
             self.boardTiles[tile][PIECE] = (None, None)
+
+    def setPerspectiveWhite(self):
+        return self.perspective_white
+
+    def setPerspectiveWhite(self, perspective_white):
+        self.perspective_white = perspective_white
 
     def randomizePieces(self, num_pieces=0):
         """ Randomizes placement of pieces WITHOUT ARRANGING
@@ -328,12 +336,45 @@ class ChessEngine:
 
         TILE_SPACE = 5
 
-        return [
-            [x-TILE_SCALE[0]*TILE_SPACE, y+TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]],
-            [x+TILE_SCALE[0]*TILE_SPACE, y+TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]],
-            [x+TILE_SCALE[0]*TILE_SPACE, y-TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]],
-            [x-TILE_SCALE[0]*TILE_SPACE, y-TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]]
-        ]
+        rotation = self.board_rotation
+
+        axis_dist = TILE_SPACE * TILE_SCALE[0]
+
+        cos = math.cos(rotation)
+        sin = math.sin(rotation)
+
+        a8x = x + (axis_dist * cos - axis_dist * sin)
+        a8y = y + (axis_dist * cos + axis_dist * sin) 
+
+        h8x = x + (axis_dist * cos + axis_dist * sin)
+        h8y = y + (-axis_dist * cos + axis_dist * sin) 
+
+        h1x = x + (-axis_dist * cos + axis_dist * sin)
+        h1y = y + (-axis_dist * cos - axis_dist * sin) 
+
+        a1x = x + (-axis_dist * cos - axis_dist * sin)
+        a1y = y + (axis_dist * cos - axis_dist * sin) 
+
+        z += TILE_SCALE[2]
+
+        corners = []
+
+        if self.perspective_white:
+            corners = [
+                [a8x, a8y, z],
+                [h8x, h8y, z],
+                [h1x, h1y, z],
+                [a1x, a1y, z]
+            ]
+        else:
+            corners = [
+                [h1x, h1y, z],
+                [a1x, a1y, z],
+                [a8x, a8y, z],
+                [h8x, h8y, z]
+            ]
+
+        return corners
 
     def visualizeBoardCorners(self, vis):
         corner_coords = self.getBoardCorners()
@@ -353,10 +394,16 @@ class ChessEngine:
         """
         arrangement = []
 
-        for rank_name in chess.RANK_NAMES[::-1]:                 
-            for file_name in chess.FILE_NAMES:
+        if self.perspective_white:
+            ranks = chess.RANK_NAMES[::-1]
+            files = chess.FILE_NAMES
+        else:
+            ranks = chess.RANK_NAMES
+            files = chess.FILE_NAMES[::-1]
+
+        for rank_name in ranks:                 
+            for file_name in files:
                 tilename = file_name + rank_name
-                # arrangement.append(str(self._getPieceNumberAtTile(tilename)))
                 arrangement.append(self._getPieceNumberAtTile(tilename))
 
         return arrangement
