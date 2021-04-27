@@ -18,7 +18,6 @@ from motionHelpers import *
 from planning import *
 import random
 
-APPROACH_DIST = 0.15
 class PlacePlanner(MultiStepPlanner):
     """
     Plans a placing motion for a given object and a specified grasp.
@@ -52,18 +51,21 @@ class PlacePlanner(MultiStepPlanner):
         self.objbb = object.geometry().getBBTight()
         self.qstart = robot.getConfig()  #grasped object 
 
-    def object_free(self,q):
+    def object_free(self,q=None):
         """Helper: returns true if the object is collision free at configuration q, if it is
         attached to the gripper."""
-        self.robot.setConfig(q)
+        if q is not None:
+            self.robot.setConfig(q)
         gripper_link = self.robot.link(self.gripper.base_link)
         self.object.setTransform(*se3.mul(gripper_link.getTransform(),self.Tobject_gripper))
         for i in range(self.world.numTerrains()):
             if self.object.geometry().collides(self.world.terrain(i).geometry()):
+                print(self.object.getName(),"Collided with terrain")
                 return False
         for i in range(self.world.numRigidObjects()):
             if i == self.object.index: continue
             if self.object.geometry().collides(self.world.rigidObject(i).geometry()):
+                print(self.object.getName(),"Collided with", self.world.rigidObject(i).getName(), i)
                 return False
         return True
 
@@ -131,17 +133,7 @@ class PlacePlanner(MultiStepPlanner):
         T_grip_w = gripper_link.getTransform()
         T_obj_w = se3.mul(T_grip_w,self.Tobject_gripper)
         self.object.setTransform(*T_obj_w)        # Set new object config based on gripper pose
-        ret = is_collision_free_grasp(self.world, self.robot, self.object) # Check new arm position is valid
-        for i in range(self.world.numTerrains()): # Check object to cabinet/robot stand collisions
-            if self.object.geometry().collides(self.world.terrain(i).geometry()):
-                print("obj collides with terrain!")
-                ret = False
-        for i in range(self.world.numRigidObjects()):
-            if i == self.object.index: continue
-            if self.object.geometry().collides(self.world.rigidObject(i).geometry()):
-                print("Cur obj",self.object.getName(), self.object.index, \
-                    "collides with object:", self.world.rigidObject(i).getName(), i)
-                ret = False
+        ret = is_collision_free_grasp(self.world, self.robot, self.object, place=True) # Check new arm position is valid
         #vis.debug(self.robot)
         # Reset robot/object transform
         self.object.setTransform(*obj_start)
@@ -155,14 +147,14 @@ class PlacePlanner(MultiStepPlanner):
         self.robot.setConfig(self.qstart)
         return qlift
     def solve_qplace(self,Tplacement):
-        #TODO: solve for the placement configuration
+        #TODO: adjust ik objective to allow rotation about z for placement configuration
         if not isinstance(self.gripper,(int,str)):
             temp_gripper = self.gripper.base_link
         link = self.robot.link(temp_gripper)
         T_grip = se3.mul(Tplacement,se3.inv(self.Tobject_gripper))
         obj = ik.objective(link,R=T_grip[0],t=T_grip[1])
         #res = ik.solve(obj)
-        res = ik.solve_global(obj, iters=100, numRestarts = 10, feasibilityCheck=self.check_collision)
+        res = ik.solve_global(obj, iters=100, numRestarts = 10, feasibilityCheck=self.object_free)
         if not res:
             global DEBUG_MODE
             if DEBUG_MODE:
@@ -183,7 +175,7 @@ class PlacePlanner(MultiStepPlanner):
         #TODO: solve for the retraction step
         self.robot.setConfig(qplace)
         amount = self.gripper.config_to_opening(self.gripper.get_finger_config(qplace))
-        qopen = self.gripper.set_finger_config(qplace,self.gripper.partway_open_config(amount + 0.1))   #open the fingers further
+        qopen = self.gripper.set_finger_config(qplace,self.gripper.partway_open_config(amount + 0.05))   #open the fingers further
         distance = 0.2
         self.robot.setConfig(qopen)
         qlift = retract(self.robot, self.gripper, vectorops.mul([0,0,1],distance), local=False) # move up a distance
@@ -203,7 +195,7 @@ class PlacePlanner(MultiStepPlanner):
                                             extraConstraints=[self.check_collision],
                                             movingSubset=moving_joints, **planOpts)
         if plan == None:
-            print("Planning Failed")
+            print("Transfer Plan Invalid")
             return None
         numIters = 80
         t1 = time.time()
@@ -282,5 +274,5 @@ def plan_place(world,robot,obj,Tobject_gripper,gripper,goal_bounds):
     return planner.solve(time_limit)
 def plan_place_target(world,robot,obj,Tobject_gripper,gripper,target):
     planner = PlacePlanner(world,robot,obj,Tobject_gripper,gripper,target)
-    time_limit = 60
+    time_limit = 10
     return planner.solve(time_limit)

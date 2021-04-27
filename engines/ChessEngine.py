@@ -30,12 +30,14 @@ PIECE = 'piece'
 DEFAULT = 'default'
 
 class ChessEngine:
-    def __init__(self, world, tabletop):
+    def __init__(self, world, tabletop, perspective_white=True):
         self.world = world
         self.tabletop = tabletop
 
-        self.boardTiles = None
+        self.boardTiles = None          # Keeps track of piece and tile objects
         self.pieces = None
+        self.chessBoard = chess.Board() # Used to make logical chess moves
+        self.perspective_white = perspective_white
 
         self.WHITE = (253/255, 217/255, 168/255, 1)
         # self.BLACK = (45/255, 28/255, 12/255, 1)
@@ -130,6 +132,12 @@ class ChessEngine:
 
         for tile in self.boardTiles:
             self.boardTiles[tile][PIECE] = (None, None)
+
+    def setPerspectiveWhite(self):
+        return self.perspective_white
+
+    def setPerspectiveWhite(self, perspective_white):
+        self.perspective_white = perspective_white
 
     def randomizePieces(self, num_pieces=0):
         """ Randomizes placement of pieces WITHOUT ARRANGING
@@ -328,12 +336,45 @@ class ChessEngine:
 
         TILE_SPACE = 5
 
-        return [
-            [x-TILE_SCALE[0]*TILE_SPACE, y+TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]],
-            [x+TILE_SCALE[0]*TILE_SPACE, y+TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]],
-            [x+TILE_SCALE[0]*TILE_SPACE, y-TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]],
-            [x-TILE_SCALE[0]*TILE_SPACE, y-TILE_SCALE[1]*TILE_SPACE, z+TILE_SCALE[2]]
-        ]
+        rotation = self.board_rotation
+
+        axis_dist = TILE_SPACE * TILE_SCALE[0]
+
+        cos = math.cos(rotation)
+        sin = math.sin(rotation)
+
+        a8x = x + (axis_dist * cos - axis_dist * sin)
+        a8y = y + (axis_dist * cos + axis_dist * sin) 
+
+        h8x = x + (axis_dist * cos + axis_dist * sin)
+        h8y = y + (-axis_dist * cos + axis_dist * sin) 
+
+        h1x = x + (-axis_dist * cos + axis_dist * sin)
+        h1y = y + (-axis_dist * cos - axis_dist * sin) 
+
+        a1x = x + (-axis_dist * cos - axis_dist * sin)
+        a1y = y + (axis_dist * cos - axis_dist * sin) 
+
+        z += TILE_SCALE[2]
+
+        corners = []
+
+        if self.perspective_white:
+            corners = [
+                [a8x, a8y, z],
+                [h8x, h8y, z],
+                [h1x, h1y, z],
+                [a1x, a1y, z]
+            ]
+        else:
+            corners = [
+                [h1x, h1y, z],
+                [a1x, a1y, z],
+                [a8x, a8y, z],
+                [h8x, h8y, z]
+            ]
+
+        return corners
 
     def visualizeBoardCorners(self, vis):
         corner_coords = self.getBoardCorners()
@@ -353,10 +394,16 @@ class ChessEngine:
         """
         arrangement = []
 
-        for rank_name in chess.RANK_NAMES[::-1]:                 
-            for file_name in chess.FILE_NAMES:
+        if self.perspective_white:
+            ranks = chess.RANK_NAMES[::-1]
+            files = chess.FILE_NAMES
+        else:
+            ranks = chess.RANK_NAMES
+            files = chess.FILE_NAMES[::-1]
+
+        for rank_name in ranks:                 
+            for file_name in files:
                 tilename = file_name + rank_name
-                # arrangement.append(str(self._getPieceNumberAtTile(tilename)))
                 arrangement.append(self._getPieceNumberAtTile(tilename))
 
         return arrangement
@@ -391,3 +438,44 @@ class ChessEngine:
 
         for (piece_name, piece_obj) in pieces:
             self.pieces[piece_name] = piece_obj
+    
+    # <--------- Functions used by ChessMotion ----------->
+    def isTurnWhite(self):
+        return self.chessBoard.turn == chess.WHITE
+    def get_square_transform(self, square:str, pname:str = None):
+        """ Returns target transform for a picking/placing a piece at a given square
+            Accounts for piece rotation
+        """
+        tile = self.boardTiles[square]['tile']
+        _,tile_t = tile.getTransform()
+        axis = [0,0,1]
+        rot = self.board_rotation 
+        if pname is not None:
+            rot += self._getPieceRotation(pname)
+        R = so3.from_axis_angle((axis, rot))
+        t = vectorops.add(tile_t, [TILE_SCALE[0]/2,TILE_SCALE[0]/2,1.1*TILE_SCALE[2]])# place right above tile to avoid collision
+        return (R,t)
+    def get_piece_obj_at(self,square:str):
+        piece = self.boardTiles[square]['piece'][1]
+        return piece
+    def check_move(self,san:str):
+        """ Checks if a given move can be made legally on the current board
+            Returns a Move object, start_square, and target_square on success 
+        """
+        try:
+            currentMove = self.chessBoard.parse_san(san)
+            if currentMove != chess.Move.null:
+                start_square = chess.square_name(currentMove.from_square)
+                target_square = chess.square_name(currentMove.to_square)
+                return currentMove,start_square,target_square
+        except ValueError:
+            print("Attempted Illegal/Ambiguous move:", san)
+        return None,None,None
+    def update_board(self,move:chess.Move):
+        """ Updates boardTiles and chessBoard pbjects for a successful move
+        """
+        self.chessBoard.push(move)
+        startSquare = chess.square_name(move.from_square)
+        endSquare = chess.square_name(move.to_square)
+        self.boardTiles[endSquare]['piece'] = self.boardTiles[startSquare]['piece']
+        self.boardTiles[startSquare]['piece'] = None
