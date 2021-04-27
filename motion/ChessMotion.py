@@ -84,6 +84,7 @@ class ChessMotion:
             Returns trajectory if move was legal and a path could be found, else None
         """
         self.currentMove,start_square,target_square = self.engine.check_move(san)
+        print(self.currentMove,start_square,target_square)
         if self.currentMove == None:
             return None,None
         self.robot.setConfig(self.qstart)
@@ -123,7 +124,7 @@ class ChessMotion:
                 trajectory_is_transfer.times.append(traj.endTime())
                 trajectory_is_transfer.milestones.append([0])
                 solved_trajectory = traj
-            vis.add("traj",traj,endEffectors=[9])
+            vis.add("traj",traj)
         self.robot.setConfig(self.qstart)
         if solved_trajectory is not None:
             self.executing_plan = True

@@ -49,6 +49,15 @@ if __name__ == '__main__':
             qmax[i] = float('inf')
     robot.setJointLimits(qmin,qmax)
 
+    robot2 = world.robot(1)
+    #need to fix the spin joints somewhat
+    qmin,qmax = robot2.getJointLimits()
+    for i in range(len(qmin)):
+        if qmax[i] - qmin[i] > math.pi*2:
+            qmin[i] = -float('inf')
+            qmax[i] = float('inf')
+    robot2.setJointLimits(qmin,qmax)
+
     chessEngine = ChessEngine(world, world.terrain('tabletop'))
     chessEngine.loadPieces()
     chessEngine.loadBoard()
@@ -61,5 +70,11 @@ if __name__ == '__main__':
     vis.add("world",world)
 
     motion = ChessMotion(world, robot, chessEngine)
+    motion2 = ChessMotion(world, robot2, chessEngine)
 
-    vis.loop(callback=motion.loop_callback)
+    def main_loop_callback():
+        if chessEngine.isTurnWhite():
+            motion.loop_callback()
+        else:
+            motion2.loop_callback()
+    vis.loop(callback=main_loop_callback)

@@ -440,6 +440,8 @@ class ChessEngine:
             self.pieces[piece_name] = piece_obj
     
     # <--------- Functions used by ChessMotion ----------->
+    def isTurnWhite(self):
+        return self.chessBoard.turn == chess.WHITE
     def get_square_transform(self, square:str, pname:str = None):
         """ Returns target transform for a picking/placing a piece at a given square
             Accounts for piece rotation
