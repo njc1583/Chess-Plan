@@ -1,16 +1,14 @@
-# from engines.EngineUtils import TileType,enum_to_piece
-
 from klampt.math import vectorops,so3,se3
 import sys
 import math
 import random
 
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPM
+
 import chess
 import chess.svg
 from chess import FILE_NAMES, Piece,PieceType,Color
-
-from PyQt5.QtSvg import QSvgWidget
-from PyQt5.QtWidgets import QApplication, QWidget, QDialog
 
 from klampt.robotsim import Mass
 
@@ -40,44 +38,19 @@ TILE = 'tile'
 PIECE = 'piece'
 DEFAULT = 'default'
 
-class MainWindow(QWidget):
-    def __init__(self, board, chessEngine):
-        super().__init__()
-
-        self.setGeometry(100, 100, 350, 250)
-
-        self.widgetSvg = QSvgWidget(parent=self)
-        self.widgetSvg.setGeometry(0, 0, 250, 250)
-        
-        self.dialogue = 
-
-        self.chessboardSvg = chess.svg.board(board).encode("UTF-8")
-        
-        self.widgetSvg.load(self.chessboardSvg)
-
-        self.show()
-
-        self.thing = input('Help me')
-
-        self.close()
-
-        chessEngine.setPyChessBoard(board)
-
 class ChessEngine:
-    def __init__(self, world, tabletop, perspective_white=True):
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.AJ = Ajedrez(3, continue_training=False).to(self.device)
-        # self.AJ.load_state_dict(torch.load('../ajedrez/aj_model.pt'))
-        # self.AJ.eval()
+    def __init__(self, world, tabletop):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.AJ = Ajedrez(3, continue_training=False).to(self.device)
+        self.AJ.load_state_dict(torch.load('../ajedrez/aj_model.pt'))
+        self.AJ.eval()
 
-        # self.color_transforms = transforms.Compose([
-        #     transforms.Resize((224, 224)),
-        #     transforms.ToTensor(),
-        #     transforms.Normalize(mean=[0.485, 0.456, 0.406],
-        #                          std=[0.229, 0.224, 0.225])
-        # ])
-
-        self.pyChessBoard = chess.Board(None)
+        self.color_transforms = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])
+        ])
 
         self.world = world
         self.tabletop = tabletop
@@ -85,7 +58,6 @@ class ChessEngine:
         self.boardTiles = None          # Keeps track of piece and tile objects
         self.pieces = None
         self.chessBoard = chess.Board() # Used to make logical chess moves
-        self.perspective_white = perspective_white
 
         self.WHITE = (253/255, 217/255, 168/255, 1)
         # self.BLACK = (45/255, 28/255, 12/255, 1)
@@ -181,50 +153,68 @@ class ChessEngine:
         for tile in self.boardTiles:
             self.boardTiles[tile][PIECE] = (None, None)
 
-    def setPerspectiveWhite(self):
-        return self.perspective_white
+    def saveBoardToPNG(self, pyChessBoard):
+        svg_str = chess.svg.board(pyChessBoard)
 
-    def setPerspectiveWhite(self, perspective_white):
-        self.perspective_white = perspective_white
+        f = open('../simulation/board.svg', mode="w")
+        f.write(svg_str)
+        f.close()
 
-    def setPyChessBoard(self, board):
-        self.pyChessBoard = board
+        print(pyChessBoard)
 
-    def updateBoard(self):
-        app = QApplication([])
-        window = MainWindow(self.pyChessBoard, self)
+        # TODO: The below code causes errors with colinearity; consider fixing
+        # in a future release
+        # svg_str_io = io.StringIO(svg_str)
+        # drawing = svg2rlg('../simulation/board.svg')
+        # renderPM.drawToFile(drawing, '../simulation/board.png', fmt='PNG')
 
-        # window.show()
-        # app.exec()
+    def correctBoard(self, pyChessBoard):
+        while True:
+            self.saveBoardToPNG(pyChessBoard)
 
-        # window.repaint()
-        # window.close()
+            print('The SVG file has been saved to simulation/svg; open in a browser to properly visualize.')
 
-        # app.quit()
+            is_correct = input("Is the board printed at simulation/board.png correct? ").strip().lower()
 
-    def readBoardImage(self, img):
+            if is_correct == 'y' or is_correct == 'yes':
+                break
+
+            correction_string = input("Enter your corrections by square.\nPieces: K=king,Q=queen,B=bishop,N=knight,R=rook,P=pawn\nUpper-case: white; Lower-case: black\nSeparate all squares by semi-colon:\n").strip()
+
+            print("TODO: Implement utilizing the correction string")
+
+            break 
+
+
+    def readBoardImage(self, img, perspective_white):
         concat_img = split_image_pytorch(img, self.color_transforms).to(self.device)
 
         out_c = self.AJ.forward(concat_img)
 
         classes = out_c.argmax(1)
 
-        self.pyChessBoard = chess.Board(None)
+        pyChessBoard = chess.Board(None)
 
         nrow, ncol = 8, 8
         
         for i in range(nrow):
             for j in range(ncol):
-                rank = chess.RANK_NAMES[7 - i]
-                file = chess.FILE_NAMES[j]
+                if perspective_white:
+                    rank = chess.RANK_NAMES[7 - i]
+                    file = chess.FILE_NAMES[j]
+                else:
+                    rank = chess.RANK_NAMES[i]
+                    file = chess.FILE_NAMES[7 - j]
+
                 
                 square = chess.parse_square(file + rank)
                 
                 piece = ChessEngine.numberToPiece(classes[i*ncol+j].item())
                 
                 if piece is not None:
-                    self.pyChessBoard.set_piece_at(square, piece)
+                    pyChessBoard.set_piece_at(square, piece)
 
+        return pyChessBoard
 
 
     def randomizePieces(self, num_pieces=0):
@@ -414,7 +404,7 @@ class ChessEngine:
             table_bmax[2]
         ]
 
-    def getBoardCorners(self):
+    def getBoardCorners(self, perspective_white):
         """
         Returns (clockwise) the set of points at the corners of the board
         
@@ -447,7 +437,7 @@ class ChessEngine:
 
         corners = []
 
-        if self.perspective_white:
+        if perspective_white:
             corners = [
                 [a8x, a8y, z],
                 [h8x, h8y, z],
@@ -464,15 +454,15 @@ class ChessEngine:
 
         return corners
 
-    def visualizeBoardCorners(self, vis):
-        corner_coords = self.getBoardCorners()
+    def visualizeBoardCorners(self, perspective_white, vis):
+        corner_coords = self.getBoardCorners(perspective_white)
 
         vis.add('corner0', corner_coords[0], scale=0.05, color=(1,0,0,1))
         vis.add('corner1', corner_coords[1], scale=0.05, color=(0,1,0,1))
         vis.add('corner2', corner_coords[2], scale=0.05, color=(0,0,1,1))
         vis.add('corner3', corner_coords[3], scale=0.05, color=(1,0,1,1))
 
-    def getPieceArrangement(self):
+    def getPieceArrangement(self, perspective_white):
         """
         Returns of values of PieceEnums in order that they appear in sensor image.
 
@@ -482,7 +472,7 @@ class ChessEngine:
         """
         arrangement = []
 
-        if self.perspective_white:
+        if perspective_white:
             ranks = chess.RANK_NAMES[::-1]
             files = chess.FILE_NAMES
         else:

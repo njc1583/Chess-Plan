@@ -44,23 +44,24 @@ if __name__ == '__main__':
         m = obj.getMass()
         m.estimate(obj.geometry(),mass=0.454,surfaceFraction=0.2)
         obj.setMass(m)
-    robot = world.robot(0)
-    #need to fix the spin joints somewhat
-    qmin,qmax = robot.getJointLimits()
-    for i in range(len(qmin)):
-        if qmax[i] - qmin[i] > math.pi*2:
-            qmin[i] = -float('inf')
-            qmax[i] = float('inf')
-    robot.setJointLimits(qmin,qmax)
+    robot_white = world.robot(0)
 
-    robot2 = world.robot(1)
     #need to fix the spin joints somewhat
-    qmin,qmax = robot2.getJointLimits()
+    qmin,qmax = robot_white.getJointLimits()
     for i in range(len(qmin)):
         if qmax[i] - qmin[i] > math.pi*2:
             qmin[i] = -float('inf')
             qmax[i] = float('inf')
-    robot2.setJointLimits(qmin,qmax)
+    robot_white.setJointLimits(qmin,qmax)
+
+    robot_black = world.robot(1)
+    #need to fix the spin joints somewhat
+    qmin,qmax = robot_black.getJointLimits()
+    for i in range(len(qmin)):
+        if qmax[i] - qmin[i] > math.pi*2:
+            qmin[i] = -float('inf')
+            qmax[i] = float('inf')
+    robot_black.setJointLimits(qmin,qmax)
 
     chessEngine = ChessEngine(world, world.terrain('tabletop'))
     chessEngine.loadPieces()
@@ -69,37 +70,23 @@ if __name__ == '__main__':
     chessEngine.arrangeBoard(0)
     chessEngine.arrangePieces()
 
-    chessEngine.visualizeBoardCorners(vis)
+    chessEngine.visualizeBoardCorners(True, vis)
 
-    # chessEngine.updateBoard()
-    # chessEngine.updateBoard()
-    # chessEngine.updateBoard()
-
-    sensor = robot.sensor(0)
-
-    xform = sensing.get_sensor_xform(sensor)
-    link9_T = robot.link(9).getTransform()
-    full_xform = se3.mul(link9_T, xform)
-
-    # vis.add('Link 9 T', link9_T)
-    # vis.add("Camera Xform", xform)
-    # vis.add("Full xform", full_xform)
-
-    table_center = chessEngine.getTableCenter()
-    table_center = vectorops.add(table_center, [0,0,0.25])
-    R_identity = so3.identity()
-
-    print(xform)
-    print(f'Sensor link: {sensor.getSetting("link")}')
+    # table_center = chessEngine.getTableCenter()
+    # vis.add('Table Center', table_center)
 
     vis.add("world",world)
 
-    motion = ChessMotion(world, robot, chessEngine)
-    motion2 = ChessMotion(world, robot2, chessEngine)
+    motion_white = ChessMotion(world, robot_white, True, chessEngine)
+    motion_black = ChessMotion(world, robot_black, False, chessEngine)
+
+    # motion_white.visualize_rotation_points(table_center, 45, 90, vis)
+    # motion_black.visualize_rotation_points(table_center, 45, 90, vis)
 
     def main_loop_callback():
         if chessEngine.isTurnWhite():
-            motion.loop_callback()
+            motion_white.loop_callback()
         else:
-            motion2.loop_callback()
+            motion_black.loop_callback()
+
     vis.loop(callback=main_loop_callback)
