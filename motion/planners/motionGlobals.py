@@ -1,0 +1,2 @@
+DEBUG_MODE = True
+APPROACH_DIST = 0.1

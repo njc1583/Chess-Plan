@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <world>
-   <robot name="Kinova" file="../data/robots/kinova_with_robotiq_85.urdf" translation="0.0 0 0.6"/>
    <terrain name="floor" file="../data/terrains/plane.env"/>
+
+   <robot name="Kinova" file="../data/robots/kinova_with_robotiq_85.urdf" translation="0.0 0 0.6"/>
+   <robot name="Kinova2" file="../data/robots/kinova_with_robotiq_85.urdf" translation="0.95 0 0.6"/>
+
    <!-- the pedestal -->
    <terrain file="../data/terrains/cube.off" scale="0.3 0.3 0.59" translation="-0.15 -0.15 0.0">
       <display color="0.2 0.2 0.2"/>
    </terrain>
-
+   <terrain file="../data/terrains/cube.off" scale="0.3 0.3 0.59" translation="0.8 -0.15 0.0">
+      <display color="0.2 0.2 0.2"/>
+   </terrain>
+   <!-- the pedestal -->
+   <terrain file="../data/terrains/cube.off" scale="0.3 0.3 0.59" translation="-0.15 -0.15 0.0">
+      <display color="0.2 0.2 0.2"/>
+   </terrain>
    <!-- table -->
    <terrain file="../data/terrains/cube.off" scale="0.05 0.05 0.6" translation="0.2 0.25 0.01">
       <display color="0.4 0.3 0.2"/>
