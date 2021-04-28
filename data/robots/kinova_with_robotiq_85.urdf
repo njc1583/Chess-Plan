@@ -254,5 +254,7 @@
     <link name="SphericalWrist1_Link" servoP="200" servoI="0" servoD=".5" dryFriction="0" viscousFriction="3" />
     <link name="SphericalWrist2_Link" servoP="50" servoI="0" servoD=".2" dryFriction="0" viscousFriction="2" />
     <link name="Bracelet_Link" servoP="20" servoI="0" servoD=".1" dryFriction="0" viscousFriction="1" />
+
+    <sensors><CameraSensor name="rgbd_camera" link="9" Tsensor="1 0 0	0 1 0	0 0 1	0 0 0.1"  xres="480" yres="480" xfov="1.05" yfov="0.6" zmin="0.15" zmax="1.5" zresolution="0.01" zvarianceLinear="0.00001" /> </sensors>
   </klampt>
 </robot>

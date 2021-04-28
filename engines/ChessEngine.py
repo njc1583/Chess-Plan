@@ -6,11 +6,22 @@ import math
 import random
 
 import chess
-from chess import Piece,PieceType,Color
+import chess.svg
+from chess import FILE_NAMES, Piece,PieceType,Color
+
+from PyQt5.QtSvg import QSvgWidget
+from PyQt5.QtWidgets import QApplication, QWidget, QDialog
 
 from klampt.robotsim import Mass
 
 sys.path.append("../common")
+sys.path.append("../ajedrez")
+
+from Ajedrez import Ajedrez
+from DataUtils import split_image_pytorch
+
+import torch
+from torchvision import transforms, utils
 
 # OBJECT_DIRECTORY = '../data/4d-Staunton_Full_Size_Chess_Set'
 OBJECT_DIRECTORY = '../data/js4768'
@@ -29,8 +40,45 @@ TILE = 'tile'
 PIECE = 'piece'
 DEFAULT = 'default'
 
+class MainWindow(QWidget):
+    def __init__(self, board, chessEngine):
+        super().__init__()
+
+        self.setGeometry(100, 100, 350, 250)
+
+        self.widgetSvg = QSvgWidget(parent=self)
+        self.widgetSvg.setGeometry(0, 0, 250, 250)
+        
+        self.dialogue = 
+
+        self.chessboardSvg = chess.svg.board(board).encode("UTF-8")
+        
+        self.widgetSvg.load(self.chessboardSvg)
+
+        self.show()
+
+        self.thing = input('Help me')
+
+        self.close()
+
+        chessEngine.setPyChessBoard(board)
+
 class ChessEngine:
     def __init__(self, world, tabletop, perspective_white=True):
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.AJ = Ajedrez(3, continue_training=False).to(self.device)
+        # self.AJ.load_state_dict(torch.load('../ajedrez/aj_model.pt'))
+        # self.AJ.eval()
+
+        # self.color_transforms = transforms.Compose([
+        #     transforms.Resize((224, 224)),
+        #     transforms.ToTensor(),
+        #     transforms.Normalize(mean=[0.485, 0.456, 0.406],
+        #                          std=[0.229, 0.224, 0.225])
+        # ])
+
+        self.pyChessBoard = chess.Board(None)
+
         self.world = world
         self.tabletop = tabletop
 
@@ -138,6 +186,46 @@ class ChessEngine:
 
     def setPerspectiveWhite(self, perspective_white):
         self.perspective_white = perspective_white
+
+    def setPyChessBoard(self, board):
+        self.pyChessBoard = board
+
+    def updateBoard(self):
+        app = QApplication([])
+        window = MainWindow(self.pyChessBoard, self)
+
+        # window.show()
+        # app.exec()
+
+        # window.repaint()
+        # window.close()
+
+        # app.quit()
+
+    def readBoardImage(self, img):
+        concat_img = split_image_pytorch(img, self.color_transforms).to(self.device)
+
+        out_c = self.AJ.forward(concat_img)
+
+        classes = out_c.argmax(1)
+
+        self.pyChessBoard = chess.Board(None)
+
+        nrow, ncol = 8, 8
+        
+        for i in range(nrow):
+            for j in range(ncol):
+                rank = chess.RANK_NAMES[7 - i]
+                file = chess.FILE_NAMES[j]
+                
+                square = chess.parse_square(file + rank)
+                
+                piece = ChessEngine.numberToPiece(classes[i*ncol+j].item())
+                
+                if piece is not None:
+                    self.pyChessBoard.set_piece_at(square, piece)
+
+
 
     def randomizePieces(self, num_pieces=0):
         """ Randomizes placement of pieces WITHOUT ARRANGING

@@ -9,9 +9,13 @@ import time
 import sys
 from klampt.model import trajectory
 from klampt.robotsim import RigidObjectModel
+from klampt.model import sensing
+
 sys.path.append("../common")
 sys.path.append("../engines")
 sys.path.append("../motion")
+
+from PIL import Image
 
 from world_generator import save_world
 
@@ -67,27 +71,97 @@ if __name__ == '__main__':
 
     chessEngine.visualizeBoardCorners(vis)
 
+    # chessEngine.updateBoard()
+    # chessEngine.updateBoard()
+    # chessEngine.updateBoard()
+
+    sensor = robot.sensor(0)
+
+    xform = sensing.get_sensor_xform(sensor)
+    link9_T = robot.link(9).getTransform()
+    full_xform = se3.mul(link9_T, xform)
+
+    # vis.add('Link 9 T', link9_T)
+    # vis.add("Camera Xform", xform)
+    # vis.add("Full xform", full_xform)
+
+    table_center = chessEngine.getTableCenter()
+    table_center = vectorops.add(table_center, [0,0,0.25])
+    R_identity = so3.identity()
+
+    print(xform)
+    print(f'Sensor link: {sensor.getSetting("link")}')
+
     vis.add("world",world)
 
     qstart = robot.getConfig()
     motion = ChessMotion(world, robot, chessEngine.boardTiles)
 
     def planTriggered():
-        global world,robot
+        global world, robot, sensor
         robot.setConfig(qstart)
-        square = "h8"
-        path = motion.plan_to_square(square)
-        if path is None:
-            print("Unable to plan pick")
+
+        qconfig = motion.point_camera_at_board(world, robot, 9, chessEngine)
+
+        if qconfig is None:
+            print("Unable to find an angle approach at any angle")
         else:
-            (transit,approach,lift) = path
-            traj = transit
-            traj = traj.concat(approach,relative=True,jumpPolicy='jump')
-            traj = traj.concat(lift,relative=True,jumpPolicy='jump')
-            vis.add("traj",traj,endEffectors=[9])
-            vis.animate(vis.getItemName(robot),traj)
-        tTarget = motion.get_square_transform(square)
-        vis.add("targetTransform", tTarget)
+            robot.setConfig(qconfig)
+            vis.update()
+
+
+        xformnobot = sensing.get_sensor_xform(sensor)
+
+        print(f'xform w/o robot: {xformnobot}')
+
+        vis.add('xformnobot', xformnobot)
+
+        xformbot = sensing.get_sensor_xform(sensor, robot)
+
+        print(f'xform w/ robot: {xformbot}')
+
+        vis.add('xformbot', xformbot)
+
+        # link9_T = robot.link(9).getTransform()
+
+        # Tgripper = (so3.identity(), [0,0,0.1])
+
+        # full_xform = se3.mul(link9_T, Tgripper)
+
+        # sensing.set_sensor_xform(sensor, full_xform)
+
+        # vis.add('xform', xform)
+
+        # vis.add('full_xform', full_xform)
+
+        # sensing.set_sensor_xform(sensor, full_xform)
+
+        sensor.kinematicReset()
+        sensor.kinematicSimulate(world, 0.01)
+
+        chessEngine.updateBoard()
+        # a = input("Help me: ")
+        
+        rgb, depth = sensing.camera_to_images(sensor)        
+        Image.fromarray(rgb).save('test.jpg')
+
+        # global world,robot
+        # robot.setConfig(qstart)
+        # square = "h8"
+        # path = motion.plan_to_square(square)
+        # if path is None:
+        #     print("Unable to plan pick")
+        # else:
+        #     (transit,approach,lift) = path
+        #     traj = transit
+        #     traj = traj.concat(approach,relative=True,jumpPolicy='jump')
+        #     traj = traj.concat(lift,relative=True,jumpPolicy='jump')
+        #     vis.add("traj",traj,endEffectors=[9])
+        #     vis.animate(vis.getItemName(robot),traj)
+        # tTarget = motion.get_square_transform(square)
+        # vis.add("targetTransform", tTarget)
+    
+    
     vis.addAction(planTriggered,"Plan to target",'p')
 
     vis.run()

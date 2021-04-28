@@ -76,6 +76,45 @@ class ChessMotion:
                 return self.robot.getConfig()
             else:
                 return None
+
+    def rotate_camera(self, table_center, rotation, dist=0.6):
+        rotation = math.radians(rotation)
+
+        table_R = so3.identity()
+        table_t = table_center
+
+        zoom_out_R = so3.from_axis_angle(([0,1,0], rotation))
+        
+        zoom_out_t1 = vectorops.mul([-math.cos(rotation),0,math.sin(rotation)], dist)
+        zoom_out_t2 = vectorops.mul([-math.cos(rotation),0,math.sin(rotation)], dist+0.1)
+
+        zoom_out1 = se3.mul((table_R, table_t), (zoom_out_R, zoom_out_t1))
+        zoom_out2 = se3.mul((table_R, table_t), (zoom_out_R, zoom_out_t2))
+
+        return zoom_out1[1], zoom_out2[1]
+
+    def point_camera_at_board(self, world, sensor, gripper_link, chess_engine):
+        link = self.robot.link(gripper_link)
+        
+        table_center = chess_engine.getTableCenter()
+
+        zoomed_out = [self.rotate_camera(table_center, x) for x in range(45, 90, 5)]
+
+        reachable_configs = []
+
+        for z0,z1 in zoomed_out:
+            obj = ik.objective(link, local=[[0,0,0.1],[0,0,0]], world=[z0,z1])
+
+            solution = ik.solve_global(obj, iters=100, numRestarts=10, feasibilityCheck=self.check_collision)
+
+            if solution:
+                reachable_configs.append(self.robot.getConfig())
+
+        if len(reachable_configs) > 0:
+            return reachable_configs[0]
+
+        return None
+
     def plan_pick_one(self,Target):#world,robot,object,gripper,grasp):
         """
         Plans a picking motion for a given object and a specified grasp.
