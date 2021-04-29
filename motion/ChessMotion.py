@@ -271,7 +271,7 @@ class ChessMotion:
         color_rectified = cv2.warpPerspective(rgb, H, (IMAGE_SIZE, IMAGE_SIZE))
 
         board_image = Image.fromarray(color_rectified)
-        # board_image.save(f'../simulation/board_{self.perspective_white}.jpg')
+        board_image.save(f'../simulation/board_{self.perspective_white}.jpg')
 
         return color_rectified
         

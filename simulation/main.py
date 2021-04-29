@@ -67,10 +67,12 @@ if __name__ == '__main__':
     chessEngine.loadPieces()
     chessEngine.loadBoard()
 
-    chessEngine.arrangeBoard(0)
+    chessEngine.arrangeBoard(-90)
     chessEngine.arrangePieces()
 
     chessEngine.visualizeBoardCorners(True, vis)
+
+    chessEngine.visualizeTiles(vis)
 
     # table_center = chessEngine.getTableCenter()
     # vis.add('Table Center', table_center)

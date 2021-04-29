@@ -69,10 +69,11 @@ class ChessEngine:
 
         self.pieceRotations = {}
         self.pieceRotations['N'] = math.pi/2
-        self.pieceRotations['n'] = -math.pi/2 
-        self.pieceRotations['K'] = math.pi/2
-        self.pieceRotations['k'] = -math.pi/2
-        self.pieceRotations['b'] = math.pi
+        # self.pieceRotations['n'] = -math.pi/2 
+        # self.pieceRotations['K'] = math.pi/2
+        # self.pieceRotations['k'] = -math.pi/2
+        self.pieceRotations['b'] = math.pi/2
+        self.pieceRotations['B'] = -math.pi/2
 
     @classmethod
     def numberToPiece(cls, number):
@@ -251,8 +252,8 @@ class ChessEngine:
             for j,file_name in enumerate(chess.FILE_NAMES):
                 tilename = file_name + rank_name
 
-                sx = (i - 4) * TILE_SCALE[0]
-                sy = (j - 4) * TILE_SCALE[1]
+                sx = (j - 4) * TILE_SCALE[0]
+                sy = (i - 4) * TILE_SCALE[1]
 
                 t = [
                     table_c_x + sx * math.cos(rotation) - sy * math.sin(rotation),
@@ -421,17 +422,17 @@ class ChessEngine:
         cos = math.cos(rotation)
         sin = math.sin(rotation)
 
-        a8x = x + (axis_dist * cos - axis_dist * sin)
-        a8y = y + (axis_dist * cos + axis_dist * sin) 
+        h8x = x + (axis_dist * cos - axis_dist * sin)
+        h8y = y + (axis_dist * cos + axis_dist * sin) 
 
-        h8x = x + (axis_dist * cos + axis_dist * sin)
-        h8y = y + (-axis_dist * cos + axis_dist * sin) 
+        h1x = x + (axis_dist * cos + axis_dist * sin)
+        h1y = y + (-axis_dist * cos + axis_dist * sin) 
 
-        h1x = x + (-axis_dist * cos + axis_dist * sin)
-        h1y = y + (-axis_dist * cos - axis_dist * sin) 
+        a1x = x + (-axis_dist * cos + axis_dist * sin)
+        a1y = y + (-axis_dist * cos - axis_dist * sin) 
 
-        a1x = x + (-axis_dist * cos - axis_dist * sin)
-        a1y = y + (axis_dist * cos - axis_dist * sin) 
+        a8x = x + (-axis_dist * cos - axis_dist * sin)
+        a8y = y + (axis_dist * cos - axis_dist * sin) 
 
         z += TILE_SCALE[2]
 
@@ -461,6 +462,26 @@ class ChessEngine:
         vis.add('corner1', corner_coords[1], scale=0.05, color=(0,1,0,1))
         vis.add('corner2', corner_coords[2], scale=0.05, color=(0,0,1,1))
         vis.add('corner3', corner_coords[3], scale=0.05, color=(1,0,1,1))
+
+    def visualizeTiles(self, vis):
+        for i,file_name in enumerate(chess.FILE_NAMES):
+            for j,rank_name in enumerate(chess.RANK_NAMES):
+                tilename = file_name + rank_name
+
+                tile = self.boardTiles[tilename][TILE]
+                
+                _, tile_T = tile.getTransform()
+
+                tile_bmin,tile_bmax = tile.geometry().getBBTight()
+
+                t = [
+                    (tile_bmin[0] + tile_bmax[0]) / 2,
+                    (tile_bmin[1] + tile_bmax[1]) / 2,
+                    tile_bmax[2] 
+                ]
+
+                vis.add(tilename, t)
+
 
     def getPieceArrangement(self, perspective_white):
         """
