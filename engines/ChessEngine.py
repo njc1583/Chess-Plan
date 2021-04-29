@@ -545,14 +545,19 @@ class ChessEngine:
         """ Returns target transform for a picking/placing a piece at a given square
             Accounts for piece rotation
         """
-        tile = self.boardTiles[square]['tile']
-        _,tile_t = tile.getTransform()
         axis = [0,0,1]
         rot = self.board_rotation 
         if pname is not None:
             rot += self._getPieceRotation(pname)
         R = so3.from_axis_angle((axis, rot))
-        t = vectorops.add(tile_t, [TILE_SCALE[0]/2,TILE_SCALE[0]/2,1.1*TILE_SCALE[2]])# place right above tile to avoid collision
+        tile = self.boardTiles[square]['tile']
+        tile_bmin,tile_bmax = tile.geometry().getBBTight()
+        _,tile_t = tile.getTransform()
+        t = [
+            (tile_bmin[0] + tile_bmax[0]) / 2,
+            (tile_bmin[1] + tile_bmax[1]) / 2,
+            1.1*TILE_SCALE[2] + tile_t[2] # place right above tile to avoid collision
+        ]
         return (R,t)
     def get_piece_obj_at(self,square:str):
         piece = self.boardTiles[square]['piece'][1]

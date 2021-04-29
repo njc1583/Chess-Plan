@@ -161,7 +161,7 @@ class ChessMotion:
     
     def loop_callback(self):
         
-        # self.take_board_picture()
+        self.take_board_picture()
         if not self.picture_taken:
             self.robot.setConfig(self.camera_config)
             self.board_image = self.take_board_picture()
