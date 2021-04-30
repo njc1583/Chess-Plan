@@ -77,8 +77,8 @@ class ChessEngine:
         # self.pieceRotations['n'] = -math.pi/2 
         # self.pieceRotations['K'] = math.pi/2
         # self.pieceRotations['k'] = -math.pi/2
-        # self.pieceRotations['b'] = math.pi/2
-        # self.pieceRotations['B'] = -math.pi/2
+        self.pieceRotations['b'] = -math.pi/2
+        self.pieceRotations['B'] = math.pi/2
 
     @classmethod
     def numberToPiece(cls, number):
