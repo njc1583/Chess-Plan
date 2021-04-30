@@ -160,18 +160,17 @@ class ChessMotion:
         return solved_trajectory, trajectory_is_transfer
     
     def loop_callback(self):
-        
-        self.take_board_picture()
         if not self.picture_taken:
             self.robot.setConfig(self.camera_config)
             self.board_image = self.take_board_picture()
 
             self.chessBoard = self.engine.readBoardImage(self.board_image, self.perspective_white)
+            self.engine.saveBoardToPNG(self.chessBoard)
 
             self.picture_taken = True
 
         if not self.board_corrected:
-            self.engine.correctBoard(self.chessBoard)
+            self.engine.analyzeBoard(self.chessBoard, self.perspective_white)
             self.board_corrected = True
 
         if not self.executing_plan:

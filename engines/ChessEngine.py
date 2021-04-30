@@ -2,6 +2,7 @@ from klampt.math import vectorops,so3,se3
 import sys
 import math
 import random
+import re
 
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
@@ -55,9 +56,13 @@ class ChessEngine:
         self.world = world
         self.tabletop = tabletop
 
+        self.turn = 0
+
         self.boardTiles = None          # Keeps track of piece and tile objects
         self.pieces = None
         self.chessBoard = chess.Board() # Used to make logical chess moves
+
+        self.boardCorrectionRegex = re.compile('([EeKkQqBbNnRrPp][a-hA-H][0-8])(;\\\g<0>)*')
 
         self.WHITE = (253/255, 217/255, 168/255, 1)
         # self.BLACK = (45/255, 28/255, 12/255, 1)
@@ -68,12 +73,12 @@ class ChessEngine:
         self.board_rotation = 0
 
         self.pieceRotations = {}
-        self.pieceRotations['N'] = math.pi/2
+        self.pieceRotations['N'] = math.pi
         # self.pieceRotations['n'] = -math.pi/2 
         # self.pieceRotations['K'] = math.pi/2
         # self.pieceRotations['k'] = -math.pi/2
-        self.pieceRotations['b'] = math.pi/2
-        self.pieceRotations['B'] = -math.pi/2
+        # self.pieceRotations['b'] = math.pi/2
+        # self.pieceRotations['B'] = -math.pi/2
 
     @classmethod
     def numberToPiece(cls, number):
@@ -161,13 +166,31 @@ class ChessEngine:
         f.write(svg_str)
         f.close()
 
-        print(pyChessBoard)
-
         # TODO: The below code causes errors with colinearity; consider fixing
         # in a future release
         # svg_str_io = io.StringIO(svg_str)
         # drawing = svg2rlg('../simulation/board.svg')
         # renderPM.drawToFile(drawing, '../simulation/board.png', fmt='PNG')
+
+    def _correctBoard(self, pyChessBoard, correction_string):
+        matches = self.boardCorrectionRegex.findall(correction_string)
+
+        if len(matches) == 0:
+            return False
+
+        for match,_ in matches:
+            piece_name = match[0]
+            file_name = match[1].lower()
+            rank_name = match[2]
+
+            square = chess.parse_square(file_name + rank_name)
+
+            if piece_name == 'E' or piece_name == 'e':
+                pyChessBoard.remove_piece_at(square)
+            else:
+                pyChessBoard.set_piece_at(square, chess.Piece.from_symbol(piece_name))
+
+        return True
 
     def correctBoard(self, pyChessBoard):
         while True:
@@ -180,11 +203,39 @@ class ChessEngine:
             if is_correct == 'y' or is_correct == 'yes':
                 break
 
-            correction_string = input("Enter your corrections by square.\nPieces: K=king,Q=queen,B=bishop,N=knight,R=rook,P=pawn\nUpper-case: white; Lower-case: black\nSeparate all squares by semi-colon:\n").strip()
+            correction_string = input("Enter your corrections by square.\nPieces: E=empty,K=king,Q=queen,B=bishop,N=knight,R=rook,P=pawn\nUpper-case: white; Lower-case: black\nSeparate all squares by semi-colon:\n").strip()
 
-            print("TODO: Implement utilizing the correction string")
+            self._correctBoard(pyChessBoard, correction_string)
 
-            break 
+    def compareBoards(self, prev_board, next_board):
+        for move in prev_board.legal_moves:
+            temp_board = prev_board.copy()
+            temp_board.push(move)
+
+            if str(temp_board) == str(next_board):
+                return move
+        
+        return None
+
+    def analyzeBoard(self, pyChessBoard, perspective_white):
+        # TODO: This is required due to bugs in executing the transfer; remove when other bug patched
+        has_moved = input("Has the last move been executed?").strip().lower()
+
+        if has_moved == 'no' or has_moved == 'n':
+            return
+
+        if self.turn == 0:
+            self.turn += 1
+            return 
+
+        while True:
+            prev_move = self.compareBoards(self.chessBoard, pyChessBoard)
+
+            if prev_move is not None:
+                self.chessBoard.push(prev_move)
+                break
+            else:
+                self.correctBoard(pyChessBoard)
 
 
     def readBoardImage(self, img, perspective_white):
@@ -578,7 +629,7 @@ class ChessEngine:
     def update_board(self,move:chess.Move):
         """ Updates boardTiles and chessBoard pbjects for a successful move
         """
-        self.chessBoard.push(move)
+        # self.chessBoard.push(move)
         startSquare = chess.square_name(move.from_square)
         endSquare = chess.square_name(move.to_square)
         self.boardTiles[endSquare]['piece'] = self.boardTiles[startSquare]['piece']
