@@ -7,6 +7,7 @@ from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
 
 import chess
+import chess.engine
 import chess.svg
 from chess import FILE_NAMES, Piece,PieceType,Color
 
@@ -40,10 +41,10 @@ DEFAULT = 'default'
 
 class ChessEngine:
     def __init__(self, world, tabletop):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.AJ = Ajedrez(3, continue_training=False).to(self.device)
-        self.AJ.load_state_dict(torch.load('../ajedrez/aj_model.pt'))
-        self.AJ.eval()
+        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # self.AJ = Ajedrez(3, continue_training=False).to(self.device)
+        # self.AJ.load_state_dict(torch.load('../ajedrez/aj_model.pt'))
+        # self.AJ.eval()
 
         self.color_transforms = transforms.Compose([
             transforms.Resize((224, 224)),
@@ -58,7 +59,7 @@ class ChessEngine:
         self.boardTiles = None          # Keeps track of piece and tile objects
         self.pieces = None
         self.chessBoard = chess.Board() # Used to make logical chess moves
-
+        # self.computer_engine = chess.engine.SimpleEngine.popen_uci("..\engines\stockfish_13_win_x64_bmi2\stockfish_13_win_x64_bmi2.exe")
         self.WHITE = (253/255, 217/255, 168/255, 1)
         # self.BLACK = (45/255, 28/255, 12/255, 1)
         # self.BLACK = (110/255, 80/255, 16/255, 1)
@@ -396,6 +397,47 @@ class ChessEngine:
                     self.boardTiles[tilename][PIECE] = (default_pieces[tilename], self.pieces[default_pieces[tilename]])
                     self.boardTiles[tilename][DEFAULT] = (default_pieces[tilename], self.pieces[default_pieces[tilename]])
 
+    def getFreeSpace(self, perspective_white,vis):
+        """ Returns x,y,z bounds for tabletop free space surrounding the chessboard
+            Limits space to half the table depending on the perspective
+            Returns goal_bounds (list): [(xmin,ymin,zmin),(xmax,ymax,zmax)]
+        """
+        # table_bmin,table_bmax = self.tabletop.geometry().getBBTight()
+        # xmin,ymin,zmin = table_bmin
+        # xmax,ymax,zmax = table_bmax
+        # [x,y,z] = self.getTableCenter()
+        # TILE_SPACE = 4
+        # half_board_dist = TILE_SPACE * TILE_SCALE[0]
+        # x_bounds = [(x+half_board_dist,xmax)]
+        # if perspective_white: 
+        #     x_bounds = [(xmin,x-half_board_dist)]
+        # y_bounds = [(ymin,y-half_board_dist),(y+half_board_dist,ymax)]
+        # z_bounds = [(zmax,zmax)]
+        # for i in x_bounds:
+        #     for j in y_bounds:
+        #         for k in z_bounds:
+        #             print("ijk",i,j,k)
+        #             coord = (i[0],j[0],k[0])
+        #             coord2 = (i[1],j[1],k[0])
+        #             coord3 = (i[1],j[0],k[0])
+        #             coord4 = (i[0],j[1],k[0])
+        #             vis.add(f"{coord}", coord, scale=0.05, color=(1,0,0,1))
+        #             vis.add(f"{coord2}", coord2, scale=0.05, color=(0,1,0,1))
+        #             vis.add(f"{coord3}", coord3, scale=0.05, color=(0,0,1,1))
+        #             vis.add(f"{coord4}", coord4, scale=0.05, color=(1,0,1,1))
+        # return [x_bounds, y_bounds, z_bounds]
+        table_bmin,table_bmax = self.tabletop.geometry().getBBTight()
+        xmin,ymin,zmin = table_bmin
+        xmax,ymax,zmax = table_bmax
+        [x,y,z] = self.getTableCenter()
+        TILE_SPACE = 4.5
+        half_board_dist = TILE_SPACE * TILE_SCALE[0]
+        xmin_new = x+half_board_dist
+        xmax_new = xmax
+        if perspective_white: 
+            xmin_new = xmin
+            xmax_new = x-half_board_dist
+        return (xmin_new,ymin,zmax),(xmax_new,ymax,zmax)
     def getTableCenter(self):
         table_bmin,table_bmax = self.tabletop.geometry().getBBTight()
 
@@ -539,6 +581,13 @@ class ChessEngine:
             self.pieces[piece_name] = piece_obj
     
     # <--------- Functions used by ChessMotion ----------->
+    def get_computer_move(self):
+        """ Returns a computer chess move for the current board
+        """
+        computer_engine = chess.engine.SimpleEngine.popen_uci("..\engines\stockfish_13_win_x64_bmi2\stockfish_13_win_x64_bmi2.exe")
+        computer_move = computer_engine.play(self.chessBoard, chess.engine.Limit(time=0.1))
+        computer_engine.quit()
+        return computer_move
     def isTurnWhite(self):
         return self.chessBoard.turn == chess.WHITE
     def get_square_transform(self, square:str, pname:str = None):
@@ -562,6 +611,14 @@ class ChessEngine:
     def get_piece_obj_at(self,square:str):
         piece = self.boardTiles[square]['piece'][1]
         return piece
+    def is_en_passant(self,move:chess.Move):
+        return self.chessBoard.is_en_passant(move)
+    def is_capture(self, move: chess.Move):
+        return self.chessBoard.is_capture(move)
+    def is_kingside_castling(self, move: chess.Move):
+        return self.chessBoard.is_kingside_castling(move)
+    def is_queenside_castling(self,move: chess.Move):
+        return self.chessBoard.is_queenside_castling(move)
     def check_move(self,san:str):
         """ Checks if a given move can be made legally on the current board
             Returns a Move object, start_square, and target_square on success 
@@ -569,12 +626,13 @@ class ChessEngine:
         try:
             currentMove = self.chessBoard.parse_san(san)
             if currentMove != chess.Move.null:
-                start_square = chess.square_name(currentMove.from_square)
-                target_square = chess.square_name(currentMove.to_square)
-                return currentMove,start_square,target_square
+                # start_square = chess.square_name(currentMove.from_square)
+                # target_square = chess.square_name(currentMove.to_square)
+                # return currentMove,start_square,target_square
+                return currentMove
         except ValueError:
             print("Attempted Illegal/Ambiguous move:", san)
-        return None,None,None
+        return None
     def update_board(self,move:chess.Move):
         """ Updates boardTiles and chessBoard pbjects for a successful move
         """
