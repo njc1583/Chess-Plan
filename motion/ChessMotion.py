@@ -28,6 +28,7 @@ from placePlanner import *
 from motionGlobals import *
 import grasp_database
 
+import chess
 import cv2
 import numpy as np
 
@@ -44,10 +45,9 @@ class ChessMotion:
             robot (RobotModel): the robot in its current configuration
             qstart(RobotConfig list): initial robot start config
             gripper (GripperInfo): the gripper
-            boardTiles (dict): boardTiles object from ChessEngine
             currentObject (RigidObjectModel): the chess piece object to pick up currently
     """
-    def __init__(self, world, robot, perspective_white, engine):#boardTiles):
+    def __init__(self, world, robot, perspective_white, engine, isAuto=False):
         self.world = world
         self.robot = robot
         self.perspective_white = perspective_white
@@ -60,7 +60,9 @@ class ChessMotion:
         self.executing_plan = False
         self.execute_start_time = time.time()
         self.solved_trajectory,self.trajectory_is_transfer = None,None
+        self.intermediate_motion = False    # True when we are doing the intermediate move for captures/castling
 
+        self.isAuto = isAuto                # uses stockfish engine moves instead of human input when true 
         self.picture_taken = False
         self.board_corrected = False
 
@@ -75,14 +77,14 @@ class ChessMotion:
         if not self.db.load("../grasping/chess_grasps.json"):
             raise RuntimeError("Can't load grasp database?")
 
-    def get_object_grasps(self, name, T_obj):
+    def get_object_grasps(self, name:str, T_obj):
         """ Returns a list of transformed grasp objects from the db for the given object name and transform 
         """
         orig_grasps = self.db.object_to_grasps[name]
         grasps = [grasp.get_transformed(T_obj) for grasp in orig_grasps]
         return grasps
     
-    def plan_to_piece(self,square):
+    def plan_to_piece(self,square:str):
         """ Finds the piece object on a given square and plans to pick it up
         """
         piece = self.engine.get_piece_obj_at(square)
@@ -92,7 +94,7 @@ class ChessMotion:
         path = plan_pick_multistep(self.world,self.robot,self.currentObject,self.gripper,grasps)
         return path
     
-    def plan_to_place(self,square:str):
+    def plan_to_place(self,square:str=None):
         """ Before calling this function, 
         current robot config must be gripping the object so T_object_gripper will be correct
         """
@@ -100,22 +102,23 @@ class ChessMotion:
         Tobj = self.currentObject.getTransform()
         link = self.robot.link(self.gripper.base_link)
         self.Tobject_gripper = se3.mul(se3.inv(link.getTransform()),Tobj)
-        T_target = self.engine.get_square_transform(square, self.currentObject.getName())
-        print(T_target)
-        path = plan_place_target(self.world, self.robot,self.currentObject,self.Tobject_gripper,self.gripper,T_target)
+        if square is not None:
+            T_target = self.engine.get_square_transform(square, self.currentObject.getName())
+            print(T_target)
+            path = plan_place_target(self.world, self.robot,self.currentObject,self.Tobject_gripper,self.gripper,T_target)
+        else:
+            goal_bounds = self.engine.getFreeSpace(self.perspective_white,vis)
+            path = plan_place_bounds(self.world, self.robot,self.currentObject,self.Tobject_gripper,self.gripper,goal_bounds)
         self.currentObject.setTransform(*Tobj)
         return path
     
-    def make_move(self, san: str):
-        """ Constructs the trajectory for a chess move string in standard algebraic notation
+    def make_move(self, start_square: str, target_square: str=None):
+        """ Constructs the trajectory from a starting sqaure to a target square
             and triggers execution.
+            When target_square is None, the piece is place in any free space on the table.
             Returns trajectory if move was legal and a path could be found, else None
         """
-        self.currentMove,start_square,target_square = self.engine.check_move(san)
-        print(self.currentMove,start_square,target_square)
-        if self.currentMove == None:
-            return None,None
-        self.robot.setConfig(self.qstart)
+        # self.robot.setConfig(self.qstart)
         path = self.plan_to_piece(start_square)
         solved_trajectory = None
         trajectory_is_transfer = None
@@ -134,10 +137,14 @@ class ChessMotion:
             trajectory_is_transfer.milestones.append([0])
             trajectory_is_transfer.milestones.append([1])
             self.robot.setConfig(approach.milestones[-1])
-            tTarget = self.engine.get_square_transform(target_square, self.currentObject.getName())
-            vis.add("targetTransform", tTarget)
-            print("attempting plan to place")
-            res = self.plan_to_place(target_square)
+            if target_square is not None:
+                tTarget = self.engine.get_square_transform(target_square, self.currentObject.getName())
+                vis.add("targetTransform", tTarget)
+                print("attempting placing on a square")
+                res = self.plan_to_place(target_square)
+            else:
+                print("attempting placing on a free space")
+                res = self.plan_to_place(target_square)
             if res is None:
                 print("Unable to plan place")
             else:
@@ -161,24 +168,69 @@ class ChessMotion:
     
     def loop_callback(self):
         
-        self.take_board_picture()
-        if not self.picture_taken:
-            self.robot.setConfig(self.camera_config)
-            self.board_image = self.take_board_picture()
+        # self.take_board_picture()
+        # if not self.picture_taken:
+        #     self.robot.setConfig(self.camera_config)
+        #     self.board_image = self.take_board_picture()
 
-            self.chessBoard = self.engine.readBoardImage(self.board_image, self.perspective_white)
+        #     self.chessBoard = self.engine.readBoardImage(self.board_image, self.perspective_white)
 
-            self.picture_taken = True
+        #     self.picture_taken = True
 
-        if not self.board_corrected:
-            self.engine.correctBoard(self.chessBoard)
-            self.board_corrected = True
+        # if not self.board_corrected:
+        #     self.engine.correctBoard(self.chessBoard)
+        #     self.board_corrected = True
 
         if not self.executing_plan:
-            san = input("Enter Chess Move:")
-            self.solved_trajectory,self.trajectory_is_transfer = self.make_move(san)
+            if self.intermediate_motion:
+                # move the next piece after intermediate is moved
+                self.intermediate_motion = False
+                start_square = chess.square_name(self.currentMove.from_square)
+                target_square = chess.square_name(self.currentMove.to_square)
+                self.solved_trajectory,self.trajectory_is_transfer = self.make_move(start_square,target_square)
+                print("Moving Attacking piece")
+            else:
+                if self.isAuto:
+                    self.currentMove = self.engine.get_computer_move().move
+                    print("Executing Computer Move:", self.currentMove)
+                else: 
+                    san = input("Enter Chess Move:")
+                    self.currentMove = self.engine.check_move(san)
+                if self.currentMove == None:
+                    return
+                start_square = chess.square_name(self.currentMove.from_square)
+                target_square = chess.square_name(self.currentMove.to_square)
+                print(self.currentMove,start_square,target_square)
+                if self.engine.is_capture(self.currentMove):
+                    # move the captured piece out of the way first
+                    print("Moving captured piece")
+                    if self.engine.is_en_passant(self.currentMove):
+                        new_rank = int(target_square[1])+1 if self.perspective_white else int(target_square[1])-1
+                        target_square = start_square[0] + repr(new_rank)
+                    self.intermediate_motion = True
+                    self.solved_trajectory,self.trajectory_is_transfer = self.make_move(target_square,None)
+                elif self.engine.is_kingside_castling(self.currentMove):
+                    # move the rook to correct square first
+                    print("Castling Kingside")
+                    self.intermediate_motion = True
+                    # rook stays on same rank as the king
+                    rook_start_square = 'h'+start_square[1]
+                    rook_target_square = 'f'+start_square[1]
+                    self.solved_trajectory,self.trajectory_is_transfer = self.make_move(rook_start_square,rook_target_square)
+                elif self.engine.is_queenside_castling(self.currentMove):
+                    # move the rook to correct square first
+                    print("Castling Queenside")
+                    self.intermediate_motion = True
+                    # rook stays on same rank as the king
+                    rook_start_square = 'a'+start_square[1]
+                    rook_target_square = 'd'+start_square[1]
+                    self.solved_trajectory,self.trajectory_is_transfer = self.make_move(rook_start_square,rook_target_square)
+                else:
+                    print("Normal Move")
+                    self.solved_trajectory,self.trajectory_is_transfer = self.make_move(start_square,target_square)
+
             print("Made Plan at:", self.execute_start_time)
-            return
+            return            
 
         if self.solved_trajectory:
             t = time.time()-self.execute_start_time
@@ -195,15 +247,16 @@ class ChessMotion:
                 self.solved_trajectory = None
                 self.trajectory_is_transfer = None
                 # Update move made on chessBoard and boardTiles
-                self.engine.update_board(self.currentMove)
-                self.currentObject = None
-                self.currentMove = None
-                self.board_corrected = False
-                self.picture_taken = False
-                self.robot.setConfig(self.qstart)
+                if not self.intermediate_motion:
+                    self.engine.update_board(self.currentMove)
+                    self.currentObject = None
+                    self.currentMove = None
+                    self.board_corrected = False
+                    self.picture_taken = False
+                    # self.robot.setConfig(self.qstart)
         
-                # print('Resseting to camera configuration')
-                # self.robot.setConfig(self.camera_config)
+                print('Resseting to camera configuration')
+                self.robot.setConfig(self.camera_config)
 
 
 
