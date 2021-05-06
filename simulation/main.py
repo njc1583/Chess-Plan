@@ -72,7 +72,7 @@ if __name__ == '__main__':
 
     chessEngine.visualizeBoardCorners(True, vis)
 
-    chessEngine.visualizeTiles(vis)
+    # chessEngine.visualizeTiles(vis)
 
     # table_center = chessEngine.getTableCenter()
     # vis.add('Table Center', table_center)
@@ -86,9 +86,15 @@ if __name__ == '__main__':
     # motion_black.visualize_rotation_points(table_center, 45, 90, vis)
 
     def main_loop_callback():
-        if chessEngine.isTurnWhite():
-            motion_white.loop_callback()
-        else:
-            motion_black.loop_callback()
+        if chessEngine.startGame:
+            if chessEngine.isTurnWhite():
+                motion_white.loop_callback()
+            else:
+                motion_black.loop_callback()
+
+    def start():
+        chessEngine.startGame = True
+
+    vis.addAction(start,"Start Chess-Plan",'s')
 
     vis.loop(callback=main_loop_callback)

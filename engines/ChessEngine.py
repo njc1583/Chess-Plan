@@ -56,6 +56,7 @@ class ChessEngine:
         self.world = world
         self.tabletop = tabletop
 
+        self.startGame = False
         self.boardTiles = None          # Keeps track of piece and tile objects
         self.pieces = None
         self.chessBoard = chess.Board() # Used to make logical chess moves
@@ -641,3 +642,16 @@ class ChessEngine:
         endSquare = chess.square_name(move.to_square)
         self.boardTiles[endSquare]['piece'] = self.boardTiles[startSquare]['piece']
         self.boardTiles[startSquare]['piece'] = None
+        # Update rook pose for castling position
+        if self.is_kingside_castling(self.currentMove):
+            # rook stays on same rank as the king
+            rook_start_square = 'h'+startSquare[1]
+            rook_target_square = 'f'+startSquare[1]
+            self.boardTiles[rook_target_square]['piece'] = self.boardTiles[rook_start_square]['piece']
+            self.boardTiles[rook_start_square]['piece'] = None
+        elif self.is_queenside_castling(self.currentMove):
+            # rook stays on same rank as the king
+            rook_start_square = 'a'+startSquare[1]
+            rook_target_square = 'd'+startSquare[1]
+            self.boardTiles[rook_target_square]['piece'] = self.boardTiles[rook_start_square]['piece']
+            self.boardTiles[rook_start_square]['piece'] = None
