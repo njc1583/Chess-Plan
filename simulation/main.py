@@ -70,7 +70,10 @@ if __name__ == '__main__':
     chessEngine.arrangeBoard(-90)
     chessEngine.arrangePieces()
 
-    chessEngine.visualizeBoardCorners(True, vis)
+    for i in range(world.numRigidObjects()):
+        world.rigidObject(i).appearance().setSilhouette(0)
+
+    # chessEngine.visualizeBoardCorners(True, vis)
 
     # chessEngine.visualizeTiles(vis)
 

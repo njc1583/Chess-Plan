@@ -2,6 +2,7 @@ from klampt.math import vectorops,so3,se3
 import sys
 import math
 import random
+import re
 
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
@@ -41,10 +42,10 @@ DEFAULT = 'default'
 
 class ChessEngine:
     def __init__(self, world, tabletop):
-        # self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        # self.AJ = Ajedrez(3, continue_training=False).to(self.device)
-        # self.AJ.load_state_dict(torch.load('../ajedrez/aj_model.pt'))
-        # self.AJ.eval()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.AJ = Ajedrez(3, continue_training=False).to(self.device)
+        self.AJ.load_state_dict(torch.load('../ajedrez/aj_model.pt', map_location=self.device))
+        self.AJ.eval()
 
         self.color_transforms = transforms.Compose([
             transforms.Resize((224, 224)),
@@ -60,7 +61,11 @@ class ChessEngine:
         self.boardTiles = None          # Keeps track of piece and tile objects
         self.pieces = None
         self.chessBoard = chess.Board() # Used to make logical chess moves
-        # self.computer_engine = chess.engine.SimpleEngine.popen_uci("..\engines\stockfish_13_win_x64_bmi2\stockfish_13_win_x64_bmi2.exe")
+        self.computer_engine = chess.engine.SimpleEngine.popen_uci("..\engines\stockfish_13_win_x64_bmi2\stockfish_13_win_x64_bmi2.exe")
+        
+        self.turn = 0
+        self.boardCorrectionRegex = re.compile('([EeKkQqBbNnRrPp][a-hA-H][0-8])(;\\\g<0>)*')
+
         self.WHITE = (253/255, 217/255, 168/255, 1)
         # self.BLACK = (45/255, 28/255, 12/255, 1)
         # self.BLACK = (110/255, 80/255, 16/255, 1)
@@ -70,12 +75,12 @@ class ChessEngine:
         self.board_rotation = 0
 
         self.pieceRotations = {}
-        self.pieceRotations['N'] = math.pi/2
+        self.pieceRotations['N'] = math.pi
         # self.pieceRotations['n'] = -math.pi/2 
         # self.pieceRotations['K'] = math.pi/2
         # self.pieceRotations['k'] = -math.pi/2
-        self.pieceRotations['b'] = math.pi/2
-        self.pieceRotations['B'] = -math.pi/2
+        self.pieceRotations['b'] = -math.pi/2
+        self.pieceRotations['B'] = math.pi/2
 
     @classmethod
     def numberToPiece(cls, number):
@@ -163,13 +168,31 @@ class ChessEngine:
         f.write(svg_str)
         f.close()
 
-        print(pyChessBoard)
-
         # TODO: The below code causes errors with colinearity; consider fixing
         # in a future release
         # svg_str_io = io.StringIO(svg_str)
         # drawing = svg2rlg('../simulation/board.svg')
         # renderPM.drawToFile(drawing, '../simulation/board.png', fmt='PNG')
+
+    def _correctBoard(self, pyChessBoard, correction_string):
+        matches = self.boardCorrectionRegex.findall(correction_string)
+
+        if len(matches) == 0:
+            return False
+
+        for match,_ in matches:
+            piece_name = match[0]
+            file_name = match[1].lower()
+            rank_name = match[2]
+
+            square = chess.parse_square(file_name + rank_name)
+
+            if piece_name == 'E' or piece_name == 'e':
+                pyChessBoard.remove_piece_at(square)
+            else:
+                pyChessBoard.set_piece_at(square, chess.Piece.from_symbol(piece_name))
+
+        return True
 
     def correctBoard(self, pyChessBoard):
         while True:
@@ -182,11 +205,43 @@ class ChessEngine:
             if is_correct == 'y' or is_correct == 'yes':
                 break
 
-            correction_string = input("Enter your corrections by square.\nPieces: K=king,Q=queen,B=bishop,N=knight,R=rook,P=pawn\nUpper-case: white; Lower-case: black\nSeparate all squares by semi-colon:\n").strip()
+            correction_string = input("Enter your corrections by square.\nPieces: E=empty,K=king,Q=queen,B=bishop,N=knight,R=rook,P=pawn\nUpper-case: white; Lower-case: black\nSeparate all squares by semi-colon:\n").strip()
 
-            print("TODO: Implement utilizing the correction string")
+            self._correctBoard(pyChessBoard, correction_string)
 
-            break 
+    def compareBoards(self, prev_board, next_board):
+        print(prev_board)
+        print(next_board)
+        for move in prev_board.legal_moves:
+            temp_board = prev_board.copy()
+            temp_board.push(move)
+
+            if str(temp_board) == str(next_board):
+                return move
+        
+        return None
+
+    def analyzeBoard(self, pyChessBoard, perspective_white):
+        # TODO: This is required due to bugs in executing the transfer; remove when other bug patched
+        # has_moved = input("Has the last move been executed?").strip().lower()
+
+        # if has_moved == 'no' or has_moved == 'n':
+        #     return
+
+        # if self.turn == 0:
+        #     self.turn += 1
+        #     return 
+
+        while True:
+            prev_move = self.compareBoards(self.chessBoard, pyChessBoard)
+
+            if prev_move is not None:
+                self.update_board(prev_move)
+                # self.chessBoard.push(prev_move)
+                break
+            else:
+                print("No legal move found")
+                self.correctBoard(pyChessBoard)
 
 
     def readBoardImage(self, img, perspective_white):
@@ -643,13 +698,13 @@ class ChessEngine:
         self.boardTiles[endSquare]['piece'] = self.boardTiles[startSquare]['piece']
         self.boardTiles[startSquare]['piece'] = None
         # Update rook pose for castling position
-        if self.is_kingside_castling(self.currentMove):
+        if self.is_kingside_castling(move):
             # rook stays on same rank as the king
             rook_start_square = 'h'+startSquare[1]
             rook_target_square = 'f'+startSquare[1]
             self.boardTiles[rook_target_square]['piece'] = self.boardTiles[rook_start_square]['piece']
             self.boardTiles[rook_start_square]['piece'] = None
-        elif self.is_queenside_castling(self.currentMove):
+        elif self.is_queenside_castling(move):
             # rook stays on same rank as the king
             rook_start_square = 'a'+startSquare[1]
             rook_target_square = 'd'+startSquare[1]

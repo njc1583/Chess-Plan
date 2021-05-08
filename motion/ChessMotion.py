@@ -160,26 +160,30 @@ class ChessMotion:
                 trajectory_is_transfer.milestones.append([0])
                 solved_trajectory = traj
             vis.add("traj",traj)
-        self.robot.setConfig(self.qstart)
+        self.robot.setConfig(self.camera_config)
         if solved_trajectory is not None:
             self.executing_plan = True
             self.execute_start_time = time.time()
         return solved_trajectory, trajectory_is_transfer
     
     def loop_callback(self):
-        
-        # self.take_board_picture()
-        # if not self.picture_taken:
-        #     self.robot.setConfig(self.camera_config)
-        #     self.board_image = self.take_board_picture()
+        start = time.time()
+        if self.engine.turn==0:
+            print("First Move, no picture")
+        else:
+            print("in picture loop ", self.engine.turn)
+            if not self.picture_taken:
+                self.robot.setConfig(self.camera_config)
+                self.board_image = self.take_board_picture()
 
-        #     self.chessBoard = self.engine.readBoardImage(self.board_image, self.perspective_white)
+                self.chessBoard = self.engine.readBoardImage(self.board_image, self.perspective_white)
+                self.engine.saveBoardToPNG(self.chessBoard)
 
-        #     self.picture_taken = True
-
-        # if not self.board_corrected:
-        #     self.engine.correctBoard(self.chessBoard)
-        #     self.board_corrected = True
+                self.picture_taken = True
+                print(f"Generating image took: {time.time()-start}")
+            # if not self.board_corrected:
+            #     self.engine.analyzeBoard(self.chessBoard, self.perspective_white)
+            #     self.board_corrected = True
 
         if not self.executing_plan:
             if self.intermediate_motion:
@@ -248,7 +252,8 @@ class ChessMotion:
                 self.trajectory_is_transfer = None
                 # Update move made on chessBoard and boardTiles
                 if not self.intermediate_motion:
-                    self.engine.update_board(self.currentMove)
+                    self.engine.turn += 1
+                    # self.engine.update_board(self.currentMove)
                     self.currentObject = None
                     self.currentMove = None
                     self.board_corrected = False
