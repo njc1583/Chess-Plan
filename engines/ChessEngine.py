@@ -1,16 +1,26 @@
-# from engines.EngineUtils import TileType,enum_to_piece
-
 from klampt.math import vectorops,so3,se3
 import sys
 import math
 import random
+import re
+
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPM
 
 import chess
-from chess import Piece,PieceType,Color
+import chess.svg
+from chess import FILE_NAMES, Piece,PieceType,Color
 
 from klampt.robotsim import Mass
 
 sys.path.append("../common")
+sys.path.append("../ajedrez")
+
+from Ajedrez import Ajedrez
+from DataUtils import split_image_pytorch
+
+import torch
+from torchvision import transforms, utils
 
 # OBJECT_DIRECTORY = '../data/4d-Staunton_Full_Size_Chess_Set'
 OBJECT_DIRECTORY = '../data/js4768'
@@ -30,14 +40,29 @@ PIECE = 'piece'
 DEFAULT = 'default'
 
 class ChessEngine:
-    def __init__(self, world, tabletop, perspective_white=True):
+    def __init__(self, world, tabletop):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.AJ = Ajedrez(3, continue_training=False).to(self.device)
+        self.AJ.load_state_dict(torch.load('../ajedrez/aj_model.pt'))
+        self.AJ.eval()
+
+        self.color_transforms = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])
+        ])
+
         self.world = world
         self.tabletop = tabletop
+
+        self.turn = 0
 
         self.boardTiles = None          # Keeps track of piece and tile objects
         self.pieces = None
         self.chessBoard = chess.Board() # Used to make logical chess moves
-        self.perspective_white = perspective_white
+
+        self.boardCorrectionRegex = re.compile('([EeKkQqBbNnRrPp][a-hA-H][0-8])(;\\\g<0>)*')
 
         self.WHITE = (253/255, 217/255, 168/255, 1)
         # self.BLACK = (45/255, 28/255, 12/255, 1)
@@ -48,11 +73,12 @@ class ChessEngine:
         self.board_rotation = 0
 
         self.pieceRotations = {}
-        self.pieceRotations['N'] = math.pi/2
-        self.pieceRotations['n'] = -math.pi/2 
-        self.pieceRotations['K'] = math.pi/2
-        self.pieceRotations['k'] = -math.pi/2
-        self.pieceRotations['b'] = math.pi
+        self.pieceRotations['N'] = math.pi
+        # self.pieceRotations['n'] = -math.pi/2 
+        # self.pieceRotations['K'] = math.pi/2
+        # self.pieceRotations['k'] = -math.pi/2
+        self.pieceRotations['b'] = -math.pi/2
+        self.pieceRotations['B'] = math.pi/2
 
     @classmethod
     def numberToPiece(cls, number):
@@ -133,11 +159,115 @@ class ChessEngine:
         for tile in self.boardTiles:
             self.boardTiles[tile][PIECE] = (None, None)
 
-    def setPerspectiveWhite(self):
-        return self.perspective_white
+    def saveBoardToPNG(self, pyChessBoard):
+        svg_str = chess.svg.board(pyChessBoard)
 
-    def setPerspectiveWhite(self, perspective_white):
-        self.perspective_white = perspective_white
+        f = open('../simulation/board.svg', mode="w")
+        f.write(svg_str)
+        f.close()
+
+        # TODO: The below code causes errors with colinearity; consider fixing
+        # in a future release
+        # svg_str_io = io.StringIO(svg_str)
+        # drawing = svg2rlg('../simulation/board.svg')
+        # renderPM.drawToFile(drawing, '../simulation/board.png', fmt='PNG')
+
+    def _correctBoard(self, pyChessBoard, correction_string):
+        matches = self.boardCorrectionRegex.findall(correction_string)
+
+        if len(matches) == 0:
+            return False
+
+        for match,_ in matches:
+            piece_name = match[0]
+            file_name = match[1].lower()
+            rank_name = match[2]
+
+            square = chess.parse_square(file_name + rank_name)
+
+            if piece_name == 'E' or piece_name == 'e':
+                pyChessBoard.remove_piece_at(square)
+            else:
+                pyChessBoard.set_piece_at(square, chess.Piece.from_symbol(piece_name))
+
+        return True
+
+    def correctBoard(self, pyChessBoard):
+        while True:
+            self.saveBoardToPNG(pyChessBoard)
+
+            print('The SVG file has been saved to simulation/svg; open in a browser to properly visualize.')
+
+            is_correct = input("Is the board printed at simulation/board.png correct? ").strip().lower()
+
+            if is_correct == 'y' or is_correct == 'yes':
+                break
+
+            correction_string = input("Enter your corrections by square.\nPieces: E=empty,K=king,Q=queen,B=bishop,N=knight,R=rook,P=pawn\nUpper-case: white; Lower-case: black\nSeparate all squares by semi-colon:\n").strip()
+
+            self._correctBoard(pyChessBoard, correction_string)
+
+    def compareBoards(self, prev_board, next_board):
+        for move in prev_board.legal_moves:
+            temp_board = prev_board.copy()
+            temp_board.push(move)
+
+            if str(temp_board) == str(next_board):
+                return move
+        
+        return None
+
+    def analyzeBoard(self, pyChessBoard, perspective_white):
+        # TODO: This is required due to bugs in executing the transfer; remove when other bug patched
+        has_moved = input("Has the last move been executed?").strip().lower()
+
+        if has_moved == 'no' or has_moved == 'n':
+            return
+
+        if self.turn == 0:
+            self.turn += 1
+            return 
+
+        while True:
+            prev_move = self.compareBoards(self.chessBoard, pyChessBoard)
+
+            if prev_move is not None:
+                self.chessBoard.push(prev_move)
+                break
+            else:
+                self.correctBoard(pyChessBoard)
+
+
+    def readBoardImage(self, img, perspective_white):
+        concat_img = split_image_pytorch(img, self.color_transforms).to(self.device)
+
+        out_c = self.AJ.forward(concat_img)
+
+        classes = out_c.argmax(1)
+
+        pyChessBoard = chess.Board(None)
+
+        nrow, ncol = 8, 8
+        
+        for i in range(nrow):
+            for j in range(ncol):
+                if perspective_white:
+                    rank = chess.RANK_NAMES[7 - i]
+                    file = chess.FILE_NAMES[j]
+                else:
+                    rank = chess.RANK_NAMES[i]
+                    file = chess.FILE_NAMES[7 - j]
+
+                
+                square = chess.parse_square(file + rank)
+                
+                piece = ChessEngine.numberToPiece(classes[i*ncol+j].item())
+                
+                if piece is not None:
+                    pyChessBoard.set_piece_at(square, piece)
+
+        return pyChessBoard
+
 
     def randomizePieces(self, num_pieces=0):
         """ Randomizes placement of pieces WITHOUT ARRANGING
@@ -173,8 +303,8 @@ class ChessEngine:
             for j,file_name in enumerate(chess.FILE_NAMES):
                 tilename = file_name + rank_name
 
-                sx = (i - 4) * TILE_SCALE[0]
-                sy = (j - 4) * TILE_SCALE[1]
+                sx = (j - 4) * TILE_SCALE[0]
+                sy = (i - 4) * TILE_SCALE[1]
 
                 t = [
                     table_c_x + sx * math.cos(rotation) - sy * math.sin(rotation),
@@ -326,7 +456,7 @@ class ChessEngine:
             table_bmax[2]
         ]
 
-    def getBoardCorners(self):
+    def getBoardCorners(self, perspective_white):
         """
         Returns (clockwise) the set of points at the corners of the board
         
@@ -343,23 +473,23 @@ class ChessEngine:
         cos = math.cos(rotation)
         sin = math.sin(rotation)
 
-        a8x = x + (axis_dist * cos - axis_dist * sin)
-        a8y = y + (axis_dist * cos + axis_dist * sin) 
+        h8x = x + (axis_dist * cos - axis_dist * sin)
+        h8y = y + (axis_dist * cos + axis_dist * sin) 
 
-        h8x = x + (axis_dist * cos + axis_dist * sin)
-        h8y = y + (-axis_dist * cos + axis_dist * sin) 
+        h1x = x + (axis_dist * cos + axis_dist * sin)
+        h1y = y + (-axis_dist * cos + axis_dist * sin) 
 
-        h1x = x + (-axis_dist * cos + axis_dist * sin)
-        h1y = y + (-axis_dist * cos - axis_dist * sin) 
+        a1x = x + (-axis_dist * cos + axis_dist * sin)
+        a1y = y + (-axis_dist * cos - axis_dist * sin) 
 
-        a1x = x + (-axis_dist * cos - axis_dist * sin)
-        a1y = y + (axis_dist * cos - axis_dist * sin) 
+        a8x = x + (-axis_dist * cos - axis_dist * sin)
+        a8y = y + (axis_dist * cos - axis_dist * sin) 
 
         z += TILE_SCALE[2]
 
         corners = []
 
-        if self.perspective_white:
+        if perspective_white:
             corners = [
                 [a8x, a8y, z],
                 [h8x, h8y, z],
@@ -376,15 +506,35 @@ class ChessEngine:
 
         return corners
 
-    def visualizeBoardCorners(self, vis):
-        corner_coords = self.getBoardCorners()
+    def visualizeBoardCorners(self, perspective_white, vis):
+        corner_coords = self.getBoardCorners(perspective_white)
 
         vis.add('corner0', corner_coords[0], scale=0.05, color=(1,0,0,1))
         vis.add('corner1', corner_coords[1], scale=0.05, color=(0,1,0,1))
         vis.add('corner2', corner_coords[2], scale=0.05, color=(0,0,1,1))
         vis.add('corner3', corner_coords[3], scale=0.05, color=(1,0,1,1))
 
-    def getPieceArrangement(self):
+    def visualizeTiles(self, vis):
+        for i,file_name in enumerate(chess.FILE_NAMES):
+            for j,rank_name in enumerate(chess.RANK_NAMES):
+                tilename = file_name + rank_name
+
+                tile = self.boardTiles[tilename][TILE]
+                
+                _, tile_T = tile.getTransform()
+
+                tile_bmin,tile_bmax = tile.geometry().getBBTight()
+
+                t = [
+                    (tile_bmin[0] + tile_bmax[0]) / 2,
+                    (tile_bmin[1] + tile_bmax[1]) / 2,
+                    tile_bmax[2] 
+                ]
+
+                vis.add(tilename, t)
+
+
+    def getPieceArrangement(self, perspective_white):
         """
         Returns of values of PieceEnums in order that they appear in sensor image.
 
@@ -394,7 +544,7 @@ class ChessEngine:
         """
         arrangement = []
 
-        if self.perspective_white:
+        if perspective_white:
             ranks = chess.RANK_NAMES[::-1]
             files = chess.FILE_NAMES
         else:
@@ -446,14 +596,19 @@ class ChessEngine:
         """ Returns target transform for a picking/placing a piece at a given square
             Accounts for piece rotation
         """
-        tile = self.boardTiles[square]['tile']
-        _,tile_t = tile.getTransform()
         axis = [0,0,1]
         rot = self.board_rotation 
         if pname is not None:
             rot += self._getPieceRotation(pname)
         R = so3.from_axis_angle((axis, rot))
-        t = vectorops.add(tile_t, [TILE_SCALE[0]/2,TILE_SCALE[0]/2,1.1*TILE_SCALE[2]])# place right above tile to avoid collision
+        tile = self.boardTiles[square]['tile']
+        tile_bmin,tile_bmax = tile.geometry().getBBTight()
+        _,tile_t = tile.getTransform()
+        t = [
+            (tile_bmin[0] + tile_bmax[0]) / 2,
+            (tile_bmin[1] + tile_bmax[1]) / 2,
+            1.1*TILE_SCALE[2] + tile_t[2] # place right above tile to avoid collision
+        ]
         return (R,t)
     def get_piece_obj_at(self,square:str):
         piece = self.boardTiles[square]['piece'][1]
@@ -474,7 +629,7 @@ class ChessEngine:
     def update_board(self,move:chess.Move):
         """ Updates boardTiles and chessBoard pbjects for a successful move
         """
-        self.chessBoard.push(move)
+        # self.chessBoard.push(move)
         startSquare = chess.square_name(move.from_square)
         endSquare = chess.square_name(move.to_square)
         self.boardTiles[endSquare]['piece'] = self.boardTiles[startSquare]['piece']

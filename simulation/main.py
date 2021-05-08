@@ -9,9 +9,13 @@ import time
 import sys
 from klampt.model import trajectory
 from klampt.robotsim import RigidObjectModel
+from klampt.model import sensing
+
 sys.path.append("../common")
 sys.path.append("../engines")
 sys.path.append("../motion")
+
+from PIL import Image
 
 from world_generator import save_world
 
@@ -40,41 +44,54 @@ if __name__ == '__main__':
         m = obj.getMass()
         m.estimate(obj.geometry(),mass=0.454,surfaceFraction=0.2)
         obj.setMass(m)
-    robot = world.robot(0)
-    #need to fix the spin joints somewhat
-    qmin,qmax = robot.getJointLimits()
-    for i in range(len(qmin)):
-        if qmax[i] - qmin[i] > math.pi*2:
-            qmin[i] = -float('inf')
-            qmax[i] = float('inf')
-    robot.setJointLimits(qmin,qmax)
+    robot_white = world.robot(0)
 
-    robot2 = world.robot(1)
     #need to fix the spin joints somewhat
-    qmin,qmax = robot2.getJointLimits()
+    qmin,qmax = robot_white.getJointLimits()
     for i in range(len(qmin)):
         if qmax[i] - qmin[i] > math.pi*2:
             qmin[i] = -float('inf')
             qmax[i] = float('inf')
-    robot2.setJointLimits(qmin,qmax)
+    robot_white.setJointLimits(qmin,qmax)
+
+    robot_black = world.robot(1)
+    #need to fix the spin joints somewhat
+    qmin,qmax = robot_black.getJointLimits()
+    for i in range(len(qmin)):
+        if qmax[i] - qmin[i] > math.pi*2:
+            qmin[i] = -float('inf')
+            qmax[i] = float('inf')
+    robot_black.setJointLimits(qmin,qmax)
 
     chessEngine = ChessEngine(world, world.terrain('tabletop'))
     chessEngine.loadPieces()
     chessEngine.loadBoard()
 
-    chessEngine.arrangeBoard(0)
+    chessEngine.arrangeBoard(-90)
     chessEngine.arrangePieces()
 
-    chessEngine.visualizeBoardCorners(vis)
+    for i in range(world.numRigidObjects()):
+        world.rigidObject(i).appearance().setSilhouette(0)
+
+    # chessEngine.visualizeBoardCorners(True, vis)
+
+    # chessEngine.visualizeTiles(vis)
+
+    # table_center = chessEngine.getTableCenter()
+    # vis.add('Table Center', table_center)
 
     vis.add("world",world)
 
-    motion = ChessMotion(world, robot, chessEngine)
-    motion2 = ChessMotion(world, robot2, chessEngine)
+    motion_white = ChessMotion(world, robot_white, True, chessEngine)
+    motion_black = ChessMotion(world, robot_black, False, chessEngine)
+
+    # motion_white.visualize_rotation_points(table_center, 45, 90, vis)
+    # motion_black.visualize_rotation_points(table_center, 45, 90, vis)
 
     def main_loop_callback():
         if chessEngine.isTurnWhite():
-            motion.loop_callback()
+            motion_white.loop_callback()
         else:
-            motion2.loop_callback()
+            motion_black.loop_callback()
+
     vis.loop(callback=main_loop_callback)
