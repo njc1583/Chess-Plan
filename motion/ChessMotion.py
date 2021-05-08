@@ -11,6 +11,8 @@ import time
 import chess
 import sys
 
+from klampt.vis.visualization import addAction
+
 sys.path.append("../motion/planners")
 sys.path.append('../common')
 sys.path.append("../ajedrez")
@@ -172,9 +174,9 @@ class ChessMotion:
         return solved_trajectory, trajectory_is_transfer
     
     def loop_callback(self):
-        using_camera = True # TODO: Paramerterize
+        using_camera = True # TODO: Set to True when using AJ Edrez, False when want game to run automatically
 
-        if not self.picture_taken:
+        if using_camera and not self.picture_taken:
             self.robot.setConfig(self.camera_config)
             self.board_image = self.take_board_picture()
 
@@ -183,7 +185,7 @@ class ChessMotion:
 
             self.picture_taken = True
 
-        if not self.board_corrected:
+        if using_camera and not self.board_corrected:
             self.engine.analyzeBoard(self.chessBoard, self.perspective_white)
             self.board_corrected = True
 
