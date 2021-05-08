@@ -28,7 +28,9 @@ class PlacePlanner(MultiStepPlanner):
         robot (RobotModel): the robot in its current configuration
         object (RigidObjectModel): the object to pick.
         Tobject_gripper (se3 object): transform of the object with respect to the gripper..
-        goal_bounds (list): bounds of the goal region [(xmin,ymin,zmin,(xmax,ymax,zmax)]
+        goal_bounds (list): bounds of the goal region [ [(xmin1,xmax1),(xmin2,xmax2),...],
+                                                        [(ymin1,ymax1),(ymin2,ymax2),...],
+                                                        [(zmin1,zmax1),(zmin2,zmax2),...]]
 
     Returns:
         None or (transfer,lower,ungrasp): giving the components of the place motion.
@@ -85,8 +87,18 @@ class PlacePlanner(MultiStepPlanner):
         xmin,ymin,zmin = self.goal_bounds[0]
         xmax,ymax,zmax = self.goal_bounds[1]
         center_sampling_range = [(xmin+min_dims/2,xmax-min_dims/2),(ymin+min_dims/2,ymax-min_dims/2)]
+        # x_bounds = [(xmin+min_dims/2,xmax-min_dims/2) for (xmin,xmax) in self.goal_bounds[0]]
+        # y_bounds = [(ymin+min_dims/2,ymax-min_dims/2) for (ymin,ymax) in self.goal_bounds[0]]
+        # print(self.goal_bounds)
+        # zmin,zmax = self.goal_bounds[2][0]
+
         Tobj_feasible = []
         for iters in range(20):
+            # crand = []
+            # for bounds in [x_bounds,y_bounds]:
+            #     ind = random.randint(0,len(bounds)-1)
+            #     rand_sample = random.uniform(bounds[ind][0],bounds[ind][1])
+            #     crand.append(rand_sample)
             crand = [random.uniform(b[0],b[1]) for b in center_sampling_range]
             Robj = so3.rotation((0,0,1),random.uniform(0,math.pi*2))
             tobj = vectorops.add(so3.apply(Robj,[-center[0],-center[1],0]),[crand[0],crand[1],zmin-ozmin+0.002])
@@ -114,6 +126,7 @@ class PlacePlanner(MultiStepPlanner):
                         break
                 if not feasible:
                     continue
+                continue
             for i in range(self.world.numRigidObjects()):
                 if i == self.object.index: continue
                 if self.object.geometry().collides(self.world.rigidObject(i).geometry()):
@@ -217,7 +230,10 @@ class PlacePlanner(MultiStepPlanner):
         qpreplace = plan['qpreplace']
         retract = plan['retract']
         #TODO: construct the RobotTrajectory tuple (transfer,lower,retract)
-        return (RobotTrajectory(self.robot,milestones=[self.qstart,qlift]+transfer),RobotTrajectory(self.robot,milestones=[qpreplace,qplace]),RobotTrajectory(self.robot,milestones=retract))
+        traj1 = RobotTrajectory(self.robot,times= [dt*i for i in range(len(transfer)+2)],milestones=[self.qstart,qlift]+transfer)
+        traj2 = RobotTrajectory(self.robot,times= [dt*i for i in range(2)],milestones=[qpreplace,qplace])
+        traj3 = RobotTrajectory(self.robot,times= [dt*i for i in range(len(retract))],milestones=retract)
+        return (traj1,traj2,traj3)
 
     def solve_item(self,plan,item):
         if item == 'lift':
@@ -268,7 +284,7 @@ class PlacePlanner(MultiStepPlanner):
         raise ValueError("Invalid item "+item)
 
 
-def plan_place(world,robot,obj,Tobject_gripper,gripper,goal_bounds):
+def plan_place_bounds(world,robot,obj,Tobject_gripper,gripper,goal_bounds):
     planner = PlacePlanner(world,robot,obj,Tobject_gripper,gripper,None,goal_bounds)
     time_limit = 60
     return planner.solve(time_limit)

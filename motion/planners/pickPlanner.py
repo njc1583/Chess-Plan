@@ -131,7 +131,9 @@ class PickPlanner(MultiStepPlanner):
         approach = plan['approach']        
         qgrasp = plan['qgrasp']
         # qlift = plan['lift']
-        return (RobotTrajectory(self.robot,milestones=[qstart]+transit),RobotTrajectory(self.robot,milestones=approach))#,RobotTrajectory(self.robot,milestones=[qgrasp,qlift]))
+        traj1 = RobotTrajectory(self.robot,times=[dt*i for i in range(len(transit)+1)],milestones=[qstart]+transit)
+        traj2 = RobotTrajectory(self.robot,times=[dt*i for i in range(len(approach))],milestones=approach)
+        return (traj1,traj2)#,RobotTrajectory(self.robot,milestones=[qgrasp,qlift]))
 
     
 def plan_pick_multistep(world,robot,object,gripper,grasps):

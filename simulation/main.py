@@ -82,16 +82,22 @@ if __name__ == '__main__':
 
     vis.add("world",world)
 
-    motion_white = ChessMotion(world, robot_white, True, chessEngine)
-    motion_black = ChessMotion(world, robot_black, False, chessEngine)
+    motion_white = ChessMotion(world, robot_white, True, chessEngine, isAuto=True)
+    motion_black = ChessMotion(world, robot_black, False, chessEngine, isAuto=True)
 
     # motion_white.visualize_rotation_points(table_center, 45, 90, vis)
     # motion_black.visualize_rotation_points(table_center, 45, 90, vis)
 
     def main_loop_callback():
-        if chessEngine.isTurnWhite():
-            motion_white.loop_callback()
-        else:
-            motion_black.loop_callback()
+        if chessEngine.startGame:
+            if chessEngine.isTurnWhite():
+                motion_white.loop_callback()
+            else:
+                motion_black.loop_callback()
+
+    def start():
+        chessEngine.startGame = True
+
+    vis.addAction(start,"Start Chess-Plan",'s')
 
     vis.loop(callback=main_loop_callback)

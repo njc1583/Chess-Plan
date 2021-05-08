@@ -1,9 +1,14 @@
 ajedrez/image_dataset/*
-
+ajedrez/aj_model.pt
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+simulation/*.jpg
+simulation/*.svg
+
+*.vscode/
 
 # C extensions
 *.so
