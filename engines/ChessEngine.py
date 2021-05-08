@@ -223,14 +223,14 @@ class ChessEngine:
 
     def analyzeBoard(self, pyChessBoard, perspective_white):
         # TODO: This is required due to bugs in executing the transfer; remove when other bug patched
-        # has_moved = input("Has the last move been executed?").strip().lower()
+        has_moved = input("Has the last move been executed?").strip().lower()
 
-        # if has_moved == 'no' or has_moved == 'n':
-        #     return
+        if has_moved == 'no' or has_moved == 'n':
+            return
 
-        # if self.turn == 0:
-        #     self.turn += 1
-        #     return 
+        if self.turn == 0:
+            self.turn += 1
+            return 
 
         while True:
             prev_move = self.compareBoards(self.chessBoard, pyChessBoard)
@@ -696,17 +696,17 @@ class ChessEngine:
         startSquare = chess.square_name(move.from_square)
         endSquare = chess.square_name(move.to_square)
         self.boardTiles[endSquare]['piece'] = self.boardTiles[startSquare]['piece']
-        self.boardTiles[startSquare]['piece'] = None
+        self.boardTiles[startSquare]['piece'] = (None, None)
         # Update rook pose for castling position
         if self.is_kingside_castling(move):
             # rook stays on same rank as the king
             rook_start_square = 'h'+startSquare[1]
             rook_target_square = 'f'+startSquare[1]
             self.boardTiles[rook_target_square]['piece'] = self.boardTiles[rook_start_square]['piece']
-            self.boardTiles[rook_start_square]['piece'] = None
+            self.boardTiles[rook_start_square]['piece'] = (None, None)
         elif self.is_queenside_castling(move):
             # rook stays on same rank as the king
             rook_start_square = 'a'+startSquare[1]
             rook_target_square = 'd'+startSquare[1]
             self.boardTiles[rook_target_square]['piece'] = self.boardTiles[rook_start_square]['piece']
-            self.boardTiles[rook_start_square]['piece'] = None
+            self.boardTiles[rook_start_square]['piece'] = (None, None)

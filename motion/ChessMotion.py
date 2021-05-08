@@ -68,6 +68,11 @@ class ChessMotion:
 
         self.board_image = None
 
+        self.picture_taken = False
+        self.board_corrected = False
+
+        self.board_image = None
+
         self.gripper = robotiq_85_kinova_gen3
         self.Tobject_gripper = None
         self.db = grasp_database.GraspDatabase(self.gripper)
@@ -167,24 +172,20 @@ class ChessMotion:
         return solved_trajectory, trajectory_is_transfer
     
     def loop_callback(self):
-        using_camera = False    # Change this as needed
-        start = time.time()
-        if self.engine.turn==0:
-            print("First Move, no picture")
-        else:
-            print("in picture loop ", self.engine.turn)
-            # if not self.picture_taken:
-            #     self.robot.setConfig(self.camera_config)
-            #     self.board_image = self.take_board_picture()
+        using_camera = True # TODO: Paramerterize
 
-            #     self.chessBoard = self.engine.readBoardImage(self.board_image, self.perspective_white)
-            #     self.engine.saveBoardToPNG(self.chessBoard)
+        if not self.picture_taken:
+            self.robot.setConfig(self.camera_config)
+            self.board_image = self.take_board_picture()
 
-            #     self.picture_taken = True
-            #     print(f"Generating image took: {time.time()-start}")
-            # if not self.board_corrected:
-            #     self.engine.analyzeBoard(self.chessBoard, self.perspective_white)
-            #     self.board_corrected = True
+            self.chessBoard = self.engine.readBoardImage(self.board_image, self.perspective_white)
+            self.engine.saveBoardToPNG(self.chessBoard)
+
+            self.picture_taken = True
+
+        if not self.board_corrected:
+            self.engine.analyzeBoard(self.chessBoard, self.perspective_white)
+            self.board_corrected = True
 
         if not self.executing_plan:
             if self.intermediate_motion:
